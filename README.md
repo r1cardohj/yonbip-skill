@@ -37,6 +37,32 @@ node openapi/dist/cli.js auth login \
 ```
 
 pi 新会话即自动加载 `yonbip-skill`。
+pi 新会话即自动加载 `yonbip-skill`。
+
+## 安装到其他 Agent
+
+第 1、2 步（克隆 + 构建）与上面相同，区别在于 skill 注册目录：
+
+```bash
+# Claude Code：个人级 skill
+ln -s "$PWD" ~/.claude/skills/yonbip-skill
+
+# OpenAI Codex CLI
+ln -s "$PWD" ~/.codex/skills/yonbip-skill
+
+# 项目级（随仓库走，团队成员共享）：在仓库内创建
+mkdir -p .claude/skills && ln -s ../../ .claude/skills/yonbip-skill
+```
+
+通用原则：凡支持 SKILL.md 约定（skill 目录 + 前置元数据）的 Agent，
+把整个仓库软链/复制到它的 skill 扫描目录即可；目录名就是 skill 名。
+
+如果目标 Agent 不支持 SKILL.md，还有两条路：
+
+1. **只用 CLI，不接 Agent**：两个 CLI 均可独立使用，上面的构建 + auth login 即可；
+2. **手动接规则**：把 [SKILL.md](./SKILL.md) 的内容粘贴到该 Agent 的规则/记忆
+   配置里（如 Cursor 的 `.cursor/rules/`、自定义 system prompt），
+   并把 CLI 绝对路径替换进去。
 
 ## 目录结构
 
