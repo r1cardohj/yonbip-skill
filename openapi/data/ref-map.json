@@ -1,0 +1,254 @@
+{
+  "_doc": {
+    "说明": "引用模型 → 查询接口映射表，供 yonbip-api refs 命令使用。",
+    "键": "档案类型短名（refs <类型> 用）；aliases 支持中文/表名/字段名模糊匹配；refIds 是数据字典引用模型 id（fields 输出 [id]），可直接 refs --ref <id>。",
+    "verified": "false 表示 path 按 NC Cloud openapi 命名约定（nccloud/api/{模块}/{组件}/{资源}/{动词}）推断，未经真实环境验证；首次调用失败时按报错中的 pk 到 OPM 核对路径，然后改 ~/.config/yonbip-api/ref-map.json 覆盖（同键条目字段级合并）。",
+    "api 为 null": "接口目录中该档案没有查询类接口，refs 会给出目录搜索建议。"
+  },
+  "version": "yonbip3ddcr5",
+  "entries": {
+    "org": {
+      "label": "组织/业务单元（含集团/各职能组织）",
+      "aliases": ["组织", "业务单元", "组织单元", "集团", "公司", "财务组织", "库存组织", "销售组织", "采购组织", "资金组织", "资产组织", "项目组织", "工厂", "人力资源组织", "行政组织", "物流组织", "报表组织", "责任组织", "维修组织", "质检中心", "共享服务中心", "预算组织", "org", "pk_org", "org_orgs"],
+      "refIds": ["mi88yviopo", "y6mzoae37q", "7mg0i2j2q4", "uipnw933xf", "mkrx9n8w2s", "ze36ltoc6i", "0sxbyru6jc", "75ba9a0nxd", "dc18bg4dwb", "lbp8xvbvsq", "fcxdv39ow5", "papblatc6c", "1g8fo9qbhx", "pbg4ethapk", "66ugra6215", "j4ccdg2b32", "nqyp8svsav", "98bxnzk8vy", "vb2atm3kt6", "fwj1rb3q51", "kp0anrv7kq", "25wogbqzwt", "5y0vek0j1j", "75yanxtr0w", "iqsvzntday", "d9wo3vj3cy", "d5ture3fl4", "7pmya7ur3y", "pvjdwet3b3", "ku9qa9tfjs", "gfhhr1qwwk", "jx8kcz4zmg", "w1sj058y2w"],
+      "table": "org_orgs",
+      "pkField": "pk_org",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "0001Z010000000008W99", "name": "根据参数查询组织", "path": "uapbd/org/orgstruquery", "verified": false },
+      "note": "各职能组织（财务/库存/销售…）都是业务单元的职能视图，查 pk_org 用本条目即可；如需按职能过滤，参数名以 OPM 接口文档为准后在本地 ref-map.json 里加 fixedBody。"
+    },
+    "dept": {
+      "label": "部门",
+      "aliases": ["部门", "dept", "pk_dept", "org_dept"],
+      "refIds": ["uteazrmgb2", "4831vlnhw0"],
+      "table": "org_dept",
+      "pkField": "pk_dept",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z010000000008HBM", "name": "支持所有参数查询部门", "path": "uapbd/dept/deptquery", "verified": false }
+    },
+    "psndoc": {
+      "label": "人员",
+      "aliases": ["人员", "人员基本信息", "员工", "业务员", "psndoc", "pk_psndoc", "bd_psndoc"],
+      "refIds": ["drnjzhmtjr"],
+      "table": "bd_psndoc",
+      "pkField": "pk_psndoc",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z010000000009YWR", "name": "查询人员基本信息", "path": "uapbd/psndoc/psndocquery", "verified": false }
+    },
+    "material": {
+      "label": "物料",
+      "aliases": ["物料", "物料基本信息", "material", "pk_material", "cmaterialoid", "bd_material"],
+      "refIds": ["f57z4hk32s", "j8gp1y7641"],
+      "table": "bd_material",
+      "pkField": "pk_material",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z01000000000AQCL", "name": "查询物料", "path": "uapbd/material/materialquery", "verified": false }
+    },
+    "customer": {
+      "label": "客户",
+      "aliases": ["客户", "客户基本信息", "customer", "pk_customer", "bd_customer"],
+      "refIds": ["x851odrb25", "ewwj2r0f7v"],
+      "table": "bd_customer",
+      "pkField": "pk_customer",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z010000000007UC4", "name": "查询客户基本信息", "path": "uapbd/customer/customerquery", "verified": false }
+    },
+    "supplier": {
+      "label": "供应商",
+      "aliases": ["供应商", "供应商基本信息", "supplier", "pk_supplier", "bd_supplier"],
+      "refIds": ["oefzistq4b", "m7vmxthbbq"],
+      "table": "bd_supplier",
+      "pkField": "pk_supplier",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z01000000000D7AY", "name": "根据条件查询供应商基本信息", "path": "uapbd/supplier/supplierquery", "verified": false }
+    },
+    "measdoc": {
+      "label": "计量单位",
+      "aliases": ["计量单位", "单位", "measdoc", "pk_measdoc", "bd_measdoc"],
+      "refIds": ["3qkqoo506d"],
+      "table": "bd_measdoc",
+      "pkField": "pk_measdoc",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z01000000000DQIP", "name": "查询计量单位", "path": "uapbd/measdoc/measdocquery", "verified": false }
+    },
+    "project": {
+      "label": "项目",
+      "aliases": ["项目", "项目档案", "project", "pk_project", "bd_project"],
+      "refIds": ["pnnkwz3dss"],
+      "table": "bd_project",
+      "pkField": "pk_project",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z0100000005XWENO", "name": "查询项目档案", "path": "uapbd/project/projectquery", "verified": false }
+    },
+    "bankdoc": {
+      "label": "银行档案",
+      "aliases": ["银行", "银行档案", "bankdoc", "pk_bankdoc", "bd_bankdoc"],
+      "refIds": ["cghkq3yh69"],
+      "table": "bd_bankdoc",
+      "pkField": "pk_bankdoc",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z0100000005XWENP", "name": "银行信息全量查询", "path": "uapbd/bankdoc/bankdocquery", "verified": false }
+    },
+    "marbasclass": {
+      "label": "物料基本分类",
+      "aliases": ["物料分类", "物料基本分类", "marbasclass", "pk_marbasclass", "bd_marbasclass"],
+      "refIds": ["smy783e3kz"],
+      "table": "bd_marbasclass",
+      "pkField": "pk_marbasclass",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "1001Z0100000005Z06AM", "name": "物料分类查询", "path": "uapbd/marbasclass/marbasclassquery", "verified": false }
+    },
+    "user": {
+      "label": "用户/操作员",
+      "aliases": ["用户", "操作员", "user", "sm_user", "cuserid"],
+      "refIds": ["6cluqprrre"],
+      "table": "sm_user",
+      "pkField": "cuserid",
+      "codeField": "user_code",
+      "nameField": "user_name",
+      "api": { "pk": "1001Z01000000000D78C", "name": "根据条件查询用户信息", "path": "uapbd/user/userquery", "verified": false }
+    },
+    "defdoc": {
+      "label": "自定义档案",
+      "aliases": ["自定义档案", "defdoc", "pk_defdoc", "bd_defdoc", "生产厂商"],
+      "refIds": ["7zvbmwfysj"],
+      "table": "bd_defdoc",
+      "pkField": "pk_defdoc",
+      "codeField": "code",
+      "nameField": "name",
+      "api": { "pk": "0001Z0100000000X8QDD", "name": "查询自定义档案", "path": "uapbd/defdoc/defdocquery", "verified": false },
+      "note": "需指定档案类别参数（如 pk_defdoclist），参数名以 OPM 接口文档为准。"
+    },
+    "billtype": {
+      "label": "单据类型",
+      "aliases": ["单据类型", "交易类型", "billtype", "pk_billtypeid", "bd_billtype"],
+      "refIds": ["ce7donkwr1"],
+      "table": "bd_billtype",
+      "pkField": "pk_billtypeid",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "接口目录中没有单据类型查询接口。可在 OPM 界面查 bd_billtype，或用 apis 搜索单据的具体业务接口（很多查询接口支持按单据类型过滤）。"
+    },
+    "currtype": {
+      "label": "币种",
+      "aliases": ["币种", "币别", "currtype", "pk_currtype", "bd_currtype"],
+      "refIds": ["ebp0wb7y9c"],
+      "table": "bd_currtype",
+      "pkField": "pk_currtype",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中只有币种增删改接口。币种数量少且编码统一（CNY/USD/…），通常直接按编码填参数或登录界面确认。"
+    },
+    "stordoc": {
+      "label": "仓库",
+      "aliases": ["仓库", "库房", "stordoc", "pk_stordoc", "bd_stordoc"],
+      "refIds": ["5qi7yf0q5p"],
+      "table": "bd_stordoc",
+      "pkField": "pk_stordoc",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中只有仓库增删改接口，无查询接口。"
+    },
+    "ratetype": {
+      "label": "汇率类型",
+      "aliases": ["汇率类型", "ratetype", "pk_ratetype", "bd_ratetype"],
+      "refIds": ["5heqmccebn"],
+      "table": "bd_ratetype",
+      "pkField": "pk_ratetype",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中无汇率类型查询接口。"
+    },
+    "taxcode": {
+      "label": "增值税税码",
+      "aliases": ["税码", "增值税税码", "税率", "taxcode", "pk_taxcode", "bd_taxcode"],
+      "refIds": ["0p1meclr6j"],
+      "table": "bd_taxcode",
+      "pkField": "pk_taxcode",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中无税码查询接口。"
+    },
+    "countryzone": {
+      "label": "国家地区",
+      "aliases": ["国家", "国家地区", "countryzone", "pk_country", "bd_countryzone"],
+      "refIds": ["h50b0vyepm"],
+      "table": "bd_countryzone",
+      "pkField": "pk_country",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中无国家地区查询接口。"
+    },
+    "busitype": {
+      "label": "业务流程",
+      "aliases": ["业务流程", "busitype", "pk_busitype", "bd_busitype"],
+      "refIds": ["pg2770q51y"],
+      "table": "bd_busitype",
+      "pkField": "pk_busitype",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中无业务流程查询接口。"
+    },
+    "costcenter": {
+      "label": "成本中心",
+      "aliases": ["成本中心", "costcenter", "pk_costcenter", "resa_costcenter"],
+      "refIds": ["tkgoirorx2"],
+      "table": "resa_costcenter",
+      "pkField": "pk_costcenter",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中无成本中心查询接口。"
+    },
+    "bankaccsub": {
+      "label": "银行账户子户",
+      "aliases": ["银行账户", "银行账户子户", "bankaccsub", "bd_bankaccsub"],
+      "refIds": ["ro320uqt14"],
+      "table": "bd_bankaccsub",
+      "pkField": "pk_bankaccsub",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中无银行账户子户查询接口（有个人银行账户/供应商银行账户的条件查询）。"
+    },
+    "accid": {
+      "label": "内部账户",
+      "aliases": ["内部账户", "内部账号", "accid", "pk_accid", "bd_accid"],
+      "refIds": ["um0n49q2kk"],
+      "table": "bd_accid",
+      "pkField": "pk_accid",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中有按集团/结算中心查询内部账户接口，但属于财资模块且有前置参数，未做默认映射。"
+    },
+    "fundplan": {
+      "label": "资金计划项目",
+      "aliases": ["资金计划项目", "fundplan", "pk_fundplan", "bd_fundplan"],
+      "refIds": ["x9aq2ydff2"],
+      "table": "bd_fundplan",
+      "pkField": "pk_fundplan",
+      "codeField": "code",
+      "nameField": "name",
+      "api": null,
+      "note": "目录中无资金计划项目查询接口。"
+    }
+  }
+}

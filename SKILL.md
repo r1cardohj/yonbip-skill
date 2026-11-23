@@ -93,6 +93,8 @@ node <SKILL_DIR>/openapi/src/cli.ts <命令> [选项]
 | `auth login --gateway <url> --app-id <id> --app-secret <s> --pub-key <k> --biz-center <c>` | 配置凭证并取 token（存 `~/.config/yonbip-api/`，600 权限） |
 | `auth status` / `auth refresh` / `auth logout` | token 状态 / 强制刷新 / 删除配置 |
 | `apis <关键词>` | 在接口目录（2156 个，`openapi/data/api-catalog.json`）中搜索 |
+| `refs <档案> <关键词>` | 按名称/编码查档案主数据，返回 pk / code / name（名字 → pk 解析） |
+| `refs types` | 列出 refs 支持的档案类型及映射状态 |
 | `call <path> [--body '<json>'\|@file]` | 调 OpenAPI（POST），自动带认证头 |
 | `token` | 打印当前 access_token |
 
@@ -108,6 +110,12 @@ node openapi/src/cli.ts apis 现存量
 # → 0001Z8100000000DJ1ZH  40 供应链/4008 库存管理/400813 库存存量/40081301 查询现存量
 
 # 3. 调接口（业务参数必填项报错就按提示补，如 pk_org / cmaterialoid）
+#    档案 pk 先用 refs 按名字解析：
+node openapi/src/cli.ts refs org 华东          # 组织/业务单元按名称模糊查
+node openapi/src/cli.ts refs --ref 75ba9a0nxd 华东   # --ref 直接吃 fields 输出的引用模型 id
+node openapi/src/cli.ts refs material --code M001    # 按编码精确查
+node openapi/src/cli.ts refs types                   # 看支持哪些档案
+
 node openapi/src/cli.ts call ic/onhand/onhandQuery \
   --body '{"pk_org":"<组织pk>","cmaterialoid":"<物料pk>","page":{"pageIndex":0,"pageSize":10}}'
 ```
@@ -119,9 +127,33 @@ node openapi/src/cli.ts call ic/onhand/onhandQuery \
   （`apis` 命令只能按名称定位接口）。
 - **权限**：`call` 报"第三方应用没有 xxx 的权限" → 去 OPM 给应用关联该 API。
 - **业务参数**：报"字段:xxx为必输项"是正常的业务校验，按提示补参数即可；
-  组织/物料等 pk 值可先登录系统界面或用已关联的查询类接口获取。
+  组织/物料/客户等档案 pk 用 `refs` 命令按名称解析（见下节）。
 - **凭证安全**：四要素等价于账号密码，不要写进代码/文档/版本库；
   已配置的凭证在 `~/.config/yonbip-api/config.json`，勿提交。
+
+## refs —— 名字 → pk 参照解析
+
+call 报"pk_org 为必输"时不用再干瞪眼：`refs` 按名称/编码模糊查档案主数据，
+返回 `pk / code / name`，取 pk 直接填 call 参数。
+
+```bash
+node openapi/src/cli.ts refs org 华东          # 组织（含集团/财务/库存/销售等职能组织）
+node openapi/src/cli.ts refs 客户 华为          # 中文别名也行
+node openapi/src/cli.ts refs --ref 75ba9a0nxd 华东  # 直接吃字典 fields 输出的 [引用模型 id]
+node openapi/src/cli.ts refs material --code M001   # 按编码精确查
+node openapi/src/cli.ts refs --json ...             # 结构化输出
+```
+
+要点：
+
+- 映射表 `openapi/data/ref-map.json`：引用模型（字典 refId/表名/中文别名）→ 接口目录
+  里的查询接口（pk + path），覆盖 51 万字段里最高频的 23 类档案。
+- **路径除已标注 verified 的外均为按命名约定推断**（接口目录不含 URL）。首次调用
+  失败时按报错里的接口 pk 到 OPM 核对实际路径，然后写
+  `~/.config/yonbip-api/ref-map.json` 覆盖（同键条目字段级合并，也可加全新档案），
+  或在 OPM【关联API】给应用勾选该查询接口。
+- 目录中没有查询接口的档案（单据类型、币种、仓库等），`refs` 会说明原因并给出
+  相关接口建议；这类 pk 需登录界面或用其他条件查询接口获取。
 
 ---
 

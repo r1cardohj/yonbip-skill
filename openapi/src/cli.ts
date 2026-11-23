@@ -1,10 +1,18 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { ensureToken, fetchToken, tokenUsable } from "./auth.ts";
 import { callApi, checkBusinessError } from "./client.ts";
 import { activeProfile, configPath, fail, loadConfig, removeProfile, updateProfile } from "./config.ts";
+import { searchCatalog } from "./catalog.ts";
+import {
+  buildBody,
+  extractRows,
+  formatRows,
+  loadRefMap,
+  resolveEntry,
+  resolveEntryByRefId,
+  type RefEntry,
+} from "./refs.ts";
 
 interface Args {
   cmd?: string;
@@ -51,6 +59,14 @@ const HELP = `yonbip-api — YonBIP 高级版 OpenAPI CLI（NC Cloud OPM 认证�
   token         打印当前 access_token（给其他工具/调试用）
   apis <关键词> 在已导出的接口目录中搜索（openapi/data/api-catalog.json）
 
+  refs [档案类型] [关键词]  按名称/编码查档案主数据，返回 pk / code / name
+                --ref <refId>   用字典 fields 输出里的引用模型 id 定位档案类型
+                --code <编码>   按编码精确查（默认按名称模糊）
+                --limit <n>     返回条数（默认 30）
+                --json          输出结构化结果
+                --map <file>    追加加载自定义映射文件
+  refs types    列出支持的档案类型及映射状态（✓=路径已验证）
+
 凭证存储: ${configPath()}（权限 600）
 
 说明:
@@ -70,24 +86,6 @@ function parseBody(raw: string | undefined): unknown {
   } catch {
     fail(`--body 不是合法 JSON${raw.startsWith("@") ? `（文件 ${raw.slice(1)}）` : ""}`);
   }
-}
-
-function loadCatalog(): { pk: string; name: string; path: string }[] {
-  const dataFile = join(dirname(fileURLToPath(import.meta.url)), "..", "data", "api-catalog.json");
-  const raw = JSON.parse(readFileSync(dataFile, "utf8")) as {
-    data: { refname?: string; refpk?: string; nodeData?: { pk_api?: string; name?: string }; children?: unknown[] }[];
-  };
-  const out: { pk: string; name: string; path: string }[] = [];
-  const walk = (nodes: typeof raw.data, prefix: string) => {
-    for (const n of nodes) {
-      const name = (n.nodeData?.name ?? n.refname ?? "").trim();
-      const p = prefix ? `${prefix}/${name}` : name;
-      if (n.children && n.children.length) walk(n.children as typeof raw.data, p);
-      else if (n.nodeData?.pk_api) out.push({ pk: n.nodeData.pk_api, name, path: p });
-    }
-  };
-  walk(raw.data, "");
-  return out;
 }
 
 async function main(): Promise<void> {
@@ -179,14 +177,72 @@ async function main(): Promise<void> {
     }
     case "apis": {
       const kw = a.sub ?? fail("缺少关键词: yonbip-api apis <关键词>");
-      const catalog = loadCatalog();
-      const q = kw.toLowerCase();
-      const hits = catalog.filter((c) => c.name.toLowerCase().includes(q) || c.path.toLowerCase().includes(q));
+      const hits = searchCatalog(kw, 30);
       if (!hits.length) console.log("无结果");
-      for (const h of hits.slice(0, 30)) {
+      for (const h of hits) {
         console.log(`  ${h.pk}  ${h.path}`);
       }
-      console.log(`\n共 ${hits.length} 条`);
+      console.log(`\n共 ${hits.length} 条（前 30）`);
+      break;
+    }
+    case "refs": {
+      const map = loadRefMap(a.opts.map);
+      if (a.sub === "types") {
+        for (const [k, e] of Object.entries(map.entries)) {
+          const api = e.api
+            ? `${e.api.name}  ${e.api.path}${e.api.verified ? "  ✓" : "  (路径未验证)"}`
+            : "（目录中无查询接口）";
+          console.log(`  ${k.padEnd(12)}${e.label}  →  ${api}`);
+        }
+        console.log(`\n共 ${Object.keys(map.entries).length} 类；映射表: openapi/data/ref-map.json，可用 ~/.config/yonbip-api/ref-map.json 覆盖`);
+        break;
+      }
+      const limit = parseInt(a.opts.limit, 10) || 30;
+      let entry: RefEntry | undefined;
+      if (a.opts.ref) {
+        entry = resolveEntryByRefId(map, a.opts.ref);
+        if (!entry) fail(`字典引用模型 id "${a.opts.ref}" 不在映射表中（refs types 查看全部；可在本地 ref-map.json 补充条目）`);
+      } else {
+        const t = a.sub ?? fail("缺少档案类型: yonbip-api refs <档案类型> <关键词>（refs types 查看全部）");
+        entry = resolveEntry(map, t);
+        if (!entry) {
+          const known = Object.entries(map.entries)
+            .map(([k, e]) => `${k}(${e.label})`)
+            .join("  ");
+          fail(`未知档案类型 "${t}"\n支持: ${known}`);
+        }
+      }
+      if (!entry.api) {
+        console.log(`# ${entry.label} —— 接口目录中无查询接口，refs 无法直接解析`);
+        if (entry.note) console.log(`说明: ${entry.note}`);
+        const hints = searchCatalog(entry.aliases[0] ?? entry.label, 8);
+        if (hints.length) {
+          console.log(`目录中可能相关的接口（可用 apis 命令继续查）:`);
+          for (const h of hints) console.log(`  ${h.pk}  ${h.path}`);
+        }
+        break;
+      }
+      const keyword = a.positional[0] ?? (a.opts.ref ? a.sub : undefined);
+      const body = buildBody(entry, { keyword, code: a.opts.code, limit });
+      let res: unknown;
+      try {
+        res = await callApi(entry.api.path, body);
+      } catch (e) {
+        fail(
+          `调用失败: ${(e as Error).message}\n` +
+            `  接口: ${entry.api.name} (pk ${entry.api.pk})\n` +
+            `  路径: ${entry.api.path}` +
+            (entry.api.verified ? "" : "（推断路径，请到 OPM 按 pk 核对实际 URL 后，在 ~/.config/yonbip-api/ref-map.json 覆盖）")
+        );
+      }
+      checkBusinessError(res);
+      const result = extractRows(res, entry, keyword);
+      if ("json" in a.opts) {
+        const key = Object.entries(map.entries).find(([, e]) => e === entry)![0];
+        console.log(JSON.stringify({ type: key, label: entry.label, api: entry.api, ...result }, null, 2));
+      } else {
+        console.log(formatRows(entry, result));
+      }
       break;
     }
     default:

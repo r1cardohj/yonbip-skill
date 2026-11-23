@@ -3,7 +3,7 @@
 用友 YonBIP 高级版（NC Cloud）开发助手 skill，供开发者与 AI Agent 使用：
 
 - **yonbip-dict** — 数据字典查询 CLI（13099 张表 / 51 万字段，数据打包离线查）
-- **yonbip-api** — OpenAPI CLI（OPM 认证 + 业务接口调用 + 接口目录搜索）
+- **yonbip-api** — OpenAPI CLI（OPM 认证 + 业务接口调用 + 接口目录搜索 + 档案参照解析 refs）
 
 **Agent 使用说明见 [SKILL.md](./SKILL.md)**（含两个 CLI 的命令、工作流和注意事项）。
 
