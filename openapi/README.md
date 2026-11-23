@@ -3,11 +3,6 @@
 yonbip-skill 的 OpenAPI 子 CLI（认证 + 业务接口调用 + 接口目录搜索）。
 **使用说明见项目根目录的 [SKILL.md](../SKILL.md)**，此处只记录实现细节。
 
-## 构建
-
-```bash
-npm install && npm run build   # 产物在 dist/
-```
 
 ## 认证算法（与官方 SDK `nccloud.open.api.auto.token.cur.utils` 一致）
 

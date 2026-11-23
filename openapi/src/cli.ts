@@ -2,9 +2,9 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ensureToken, fetchToken, tokenUsable } from "./auth.js";
-import { callApi, checkBusinessError } from "./client.js";
-import { activeProfile, configPath, fail, loadConfig, removeProfile, updateProfile } from "./config.js";
+import { ensureToken, fetchToken, tokenUsable } from "./auth.ts";
+import { callApi, checkBusinessError } from "./client.ts";
+import { activeProfile, configPath, fail, loadConfig, removeProfile, updateProfile } from "./config.ts";
 
 interface Args {
   cmd?: string;

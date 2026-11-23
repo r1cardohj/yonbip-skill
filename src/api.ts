@@ -1,5 +1,5 @@
-import { baseUrl, detailUrl, readDetail } from "./store.js";
-import type { ParsedRef, TableDetail } from "./types.js";
+import { baseUrl, detailUrl, readDetail } from "./store.ts";
+import type { ParsedRef, TableDetail } from "./types.ts";
 
 export async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);

@@ -16,22 +16,20 @@ git lfs install   # 首次使用 LFS 需要先装 git-lfs
 git clone https://github.com/r1cardohj/yonbip-skill.git
 cd yonbip-skill
 
-# 2. 构建两个 CLI（dist/ 不入库，必须本地构建；Node >= 20）
-npm install && npm run build
-cd openapi && npm install && npm run build && cd ..
+# 2. 零构建：Node >= 22.18 原生执行 TypeScript，clone 即用
 
 # 3. 注册为 pi skill：软链到 pi 的 skill 扫描目录（路径按你的 pi 配置调整）
 ln -s "$PWD" ~/project/agent-stuff/skills/yonbip-skill
 
 # 4. 验证
-node dist/cli.js table so_saleorder          # 字典：离线查表
-node openapi/dist/cli.js --help              # OpenAPI CLI
+node src/cli.ts table so_saleorder           # 字典：离线查表
+node openapi/src/cli.ts --help               # OpenAPI CLI
 ```
 
-OpenAPI 使用前还需登录一次（凭证各配各的，存本机 `~/.config/yonbip-skill/../yonbip-api/`）：
+OpenAPI 使用前还需登录一次（凭证各配各的，存本机 `~/.config/yonbip-api/`）：
 
 ```bash
-node openapi/dist/cli.js auth login \
+node openapi/src/cli.ts auth login \
   --gateway http://<host>:<port> --app-id <应用编码> \
   --app-secret <应用密文> --pub-key <公钥> --biz-center <账套编码>
 ```
@@ -69,22 +67,22 @@ mkdir -p .claude/skills && ln -s ../../ .claude/skills/yonbip-skill
 ```
 ├── SKILL.md            # skill 入口（唯一）
 ├── README.md
-├── src/                # yonbip-dict 源码
-├── dist/               # yonbip-dict 构建产物（tsc）
-├── data/               # 字典数据（约 168MB，随 skill 打包）
+├── src/                # yonbip-dict（Node 直接执行，零构建）
+├── data/               # 字典数据（约 137MB，随 skill 打包）
 ├── openapi/
-│   ├── src/            # yonbip-api 源码
-│   ├── dist/           # yonbip-api 构建产物
+│   ├── src/            # yonbip-api（Node 直接执行）
 │   └── data/           # OpenAPI 接口目录（2156 个接口）
 └── package.json
 ```
 
-## 构建
+## 运行与开发
+
+两个 CLI 均零依赖，Node >= 22.18 原生执行 TypeScript（类型剥离），无需构建：
 
 ```bash
-npm install && npm run build          # yonbip-dict
-cd openapi && npm install && npm run build   # yonbip-api
+node src/cli.ts <命令>           # yonbip-dict
+node openapi/src/cli.ts <命令>   # yonbip-api
 ```
 
-两个 CLI 均零运行时依赖（Node >= 20），凭证存于用户目录（`~/.config/yonbip-api/`，
+改源码后跑 `npm run typecheck`（tsc --noEmit）做类型检查即可，凭证存于用户目录（`~/.config/yonbip-api/`，
 600 权限），不进入版本库。

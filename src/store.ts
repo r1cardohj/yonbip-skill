@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { FieldRec, TableMeta } from "./types.js";
+import type { FieldRec, TableMeta } from "./types.ts";
 
 // 数据字典随 skill 打包（data/ 与 dist/ 同级）；可用 YONBIP_DICT_HOME 覆盖
 const BUNDLED_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "data");

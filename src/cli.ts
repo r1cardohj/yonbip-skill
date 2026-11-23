@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { baseUrl, cacheSize, detailCount, fail, loadTables, paths } from "./store.js";
-import { fieldRowToJson, groupFieldHits, listFields, listModules, resolveTable, searchField, searchTables } from "./query.js";
-import { syncFields, syncIndex } from "./sync.js";
-import type { TableMeta } from "./types.js";
+import { baseUrl, cacheSize, detailCount, fail, loadTables, paths } from "./store.ts";
+import { fieldRowToJson, groupFieldHits, listFields, listModules, resolveTable, searchField, searchTables } from "./query.ts";
+import { syncFields, syncIndex } from "./sync.ts";
+import type { TableMeta } from "./types.ts";
 
 interface Args {
   cmd?: string;

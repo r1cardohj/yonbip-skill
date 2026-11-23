@@ -1,6 +1,6 @@
-import { cleanScope, getDetail, parseRef } from "./api.js";
-import { loadFields, loadModules, loadTables } from "./store.js";
-import type { FieldRec, ParsedRef, TableMeta } from "./types.js";
+import { cleanScope, getDetail, parseRef } from "./api.ts";
+import { loadFields, loadModules, loadTables } from "./store.ts";
+import type { FieldRec, ParsedRef, TableMeta } from "./types.ts";
 
 export interface FieldRow {
   name: string;

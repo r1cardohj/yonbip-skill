@@ -1,5 +1,5 @@
-import { ensureToken, sign } from "./auth.js";
-import { activeProfile, loadConfig, type Profile } from "./config.js";
+import { ensureToken, sign } from "./auth.ts";
+import { activeProfile, loadConfig, type Profile } from "./config.ts";
 
 // 业务接口 header 约定与官方 SDK getAPIRetrun 一致：
 // access_token / client_id / signature / repeat_check=Y / ucg_flag=y

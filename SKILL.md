@@ -9,8 +9,8 @@ description: 用友 YonBIP 高级版（NC Cloud）开发助手：数据字典查
 
 | CLI | 路径 | 用途 |
 |---|---|---|
-| yonbip-dict | `dist/cli.js` | 数据字典离线查询（数据已打包在 `data/`） |
-| yonbip-api | `openapi/dist/cli.js` | OpenAPI 认证 + 业务接口调用 |
+| yonbip-dict | `src/cli.ts` | 数据字典离线查询（数据已打包在 `data/`） |
+| yonbip-api | `openapi/src/cli.ts` | OpenAPI 认证 + 业务接口调用 |
 
 两者配合使用：先用字典搞清楚表结构/字段含义，再用 OpenAPI 取真实数据。
 
@@ -26,10 +26,10 @@ description: 用友 YonBIP 高级版（NC Cloud）开发助手：数据字典查
 以下 `<SKILL_DIR>` 指本 skill 的根目录（即 SKILL.md 所在目录），路径均相对它解析：
 
 ```bash
-node <SKILL_DIR>/dist/cli.js <命令> [选项]
+node <SKILL_DIR>/src/cli.ts <命令> [选项]
 ```
 
-若 `dist/` 不存在或改过 `src/`，先 `npm run build`（tsc）。
+Node >= 22.18 原生执行 TypeScript，零依赖零构建。
 
 ## 命令速查
 
@@ -70,10 +70,10 @@ node <SKILL_DIR>/dist/cli.js <命令> [选项]
 ## 运行
 
 ```bash
-node <SKILL_DIR>/openapi/dist/cli.js <命令> [选项]
+node <SKILL_DIR>/openapi/src/cli.ts <命令> [选项]
 ```
 
-若 `openapi/dist/` 不存在或改过 `openapi/src/`，先在 `openapi/` 下 `npm run build`。
+要求同上：Node >= 22.18，直接运行。
 
 ## 前置条件（OPM 侧，一次性）
 
@@ -95,15 +95,15 @@ node <SKILL_DIR>/openapi/dist/cli.js <命令> [选项]
 
 ```bash
 # 1. 登录（一次性，token 有效期约 11 天，自动刷新）
-node openapi/dist/cli.js auth login --gateway http://<host>:<port> \
+node openapi/src/cli.ts auth login --gateway http://<host>:<port> \
   --app-id <应用编码> --app-secret <应用密文> --pub-key <公钥> --biz-center <账套编码>
 
 # 2. 找接口
-node openapi/dist/cli.js apis 现存量
+node openapi/src/cli.ts apis 现存量
 # → 0001Z8100000000DJ1ZH  40 供应链/4008 库存管理/400813 库存存量/40081301 查询现存量
 
 # 3. 调接口（业务参数必填项报错就按提示补，如 pk_org / cmaterialoid）
-node openapi/dist/cli.js call ic/onhand/onhandQuery \
+node openapi/src/cli.ts call ic/onhand/onhandQuery \
   --body '{"pk_org":"<组织pk>","cmaterialoid":"<物料pk>","page":{"pageIndex":0,"pageSize":10}}'
 ```
 

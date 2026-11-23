@@ -7,10 +7,10 @@
     "yonbip-api": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc"
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.18"
   },
   "devDependencies": {
     "@types/node": "^26.6.6"

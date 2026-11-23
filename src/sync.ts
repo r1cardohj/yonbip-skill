@@ -1,5 +1,5 @@
 import { existsSync, unlinkSync } from "node:fs";
-import { downloadFile, fetchJson, parseRef } from "./api.js";
+import { downloadFile, fetchJson, parseRef } from "./api.ts";
 import {
   detailUrl,
   ensureBase,
@@ -11,8 +11,8 @@ import {
   writeDetailsJsonl,
   writeJson,
   writeJsonl,
-} from "./store.js";
-import type { DictIndexMeta, FieldRec, RawTable, TableMeta } from "./types.js";
+} from "./store.ts";
+import type { DictIndexMeta, FieldRec, RawTable, TableMeta } from "./types.ts";
 
 interface RawIndex extends DictIndexMeta {
   source: string;

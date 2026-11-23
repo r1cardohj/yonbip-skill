@@ -4,7 +4,7 @@
 // - client_secret = RSA/ECB/OAEPWithSHA-256AndMGF1Padding(plain) → Base64 → URLencode
 // - token 端点: {gateway}/nccloud/opm/accesstoken (grant_type=client_credentials)
 import { createHash, publicEncrypt, constants } from "node:crypto";
-import { updateProfile, type Profile } from "./config.js";
+import { updateProfile, type Profile } from "./config.ts";
 
 export function computeSalt(pubKey: string): string {
   const round1 = createHash("sha1").update(pubKey, "utf8").digest();
