@@ -6,6 +6,37 @@
 - **yonbip-api** — OpenAPI CLI（OPM 认证 + 业务接口调用 + 接口目录搜索）
 
 **Agent 使用说明见 [SKILL.md](./SKILL.md)**（含两个 CLI 的命令、工作流和注意事项）。
+**Agent 使用说明见 [SKILL.md](./SKILL.md)**（含两个 CLI 的命令、工作流和注意事项）。
+
+## 安装到 pi
+
+```bash
+# 1. 克隆（含 LFS 数据，字典 168MB）
+git lfs install   # 首次使用 LFS 需要先装 git-lfs
+git clone https://github.com/r1cardohj/yonbip-skill.git
+cd yonbip-skill
+
+# 2. 构建两个 CLI（dist/ 不入库，必须本地构建；Node >= 20）
+npm install && npm run build
+cd openapi && npm install && npm run build && cd ..
+
+# 3. 注册为 pi skill：软链到 pi 的 skill 扫描目录（路径按你的 pi 配置调整）
+ln -s "$PWD" ~/project/agent-stuff/skills/yonbip-skill
+
+# 4. 验证
+node dist/cli.js table so_saleorder          # 字典：离线查表
+node openapi/dist/cli.js --help              # OpenAPI CLI
+```
+
+OpenAPI 使用前还需登录一次（凭证各配各的，存本机 `~/.config/yonbip-skill/../yonbip-api/`）：
+
+```bash
+node openapi/dist/cli.js auth login \
+  --gateway http://<host>:<port> --app-id <应用编码> \
+  --app-secret <应用密文> --pub-key <公钥> --biz-center <账套编码>
+```
+
+pi 新会话即自动加载 `yonbip-skill`。
 
 ## 目录结构
 
