@@ -1,0 +1,4 @@
+data/details/*.json filter=lfs diff=lfs merge=lfs -text
+data/fields.jsonl filter=lfs diff=lfs merge=lfs -text
+data/tables.jsonl filter=lfs diff=lfs merge=lfs -text
+openapi/data/api-catalog.json filter=lfs diff=lfs merge=lfs -text
