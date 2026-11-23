@@ -190,7 +190,6 @@ async function main(): Promise<void> {
       console.log(`表索引:     ${tables.length} 张`);
       console.log(`字段明细:   ${detailCount()} 个`);
       console.log(`缓存大小:   ${(cacheSize() / 1024 / 1024).toFixed(1)} MB`);
-      console.log(`数据源:     ${getBase()}`);
       break;
     }
     default:

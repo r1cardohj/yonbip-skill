@@ -61,8 +61,8 @@ export async function listFields(base: string | undefined, nameOrId: string): Pr
     type: f.dataTypeSql ?? "",
     key: Boolean(f.keyProp),
     nullable: Boolean(f.nullable),
-    ref: parseRef(f.refClassPathHref),
-    scope: cleanScope(f.dataScope),
+    ref: parseRef(f.refClassPathHref as string | undefined),
+    scope: cleanScope(f.dataScope as string | undefined),
     help: (f.help ?? "").trim(),
   }));
   return { table, fields };

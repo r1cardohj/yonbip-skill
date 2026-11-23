@@ -1,5 +1,4 @@
-import { existsSync } from "node:fs";
-import { baseUrl, detailUrl, paths, readJson, writeJson } from "./store.js";
+import { baseUrl, detailUrl, readDetail } from "./store.js";
 import type { ParsedRef, TableDetail } from "./types.js";
 
 export async function fetchJson<T>(url: string): Promise<T> {
@@ -15,16 +14,14 @@ export async function downloadFile(url: string, dest: string): Promise<void> {
   writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
 }
 
+
 export async function getDetail(base: string | undefined, id: string): Promise<TableDetail> {
-  const cached = paths.detailFile(id);
-  if (existsSync(cached)) {
-    return readJson<TableDetail>(cached);
-  }
-  const detail = await fetchJson<TableDetail>(detailUrl(baseUrl(base), id));
-  writeJson(cached, detail);
-  return detail;
+  const local = readDetail(id);
+  if (local) return local as TableDetail;
+  return await fetchJson<TableDetail>(detailUrl(baseUrl(base), id));
 }
 
+// refClassPathHref 形如 '<a href="javascript:void(0);" onClick=loadDataDict("f10pl1znl4");>应用资产类型</a> (assettype)'
 // refClassPathHref 形如 '<a href="javascript:void(0);" onClick=loadDataDict("f10pl1znl4");>应用资产类型</a> (assettype)'
 // 纯文本时形如 '字符串 (String)'
 export function parseRef(html: string | undefined): ParsedRef {

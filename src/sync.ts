@@ -1,16 +1,17 @@
 import { existsSync, unlinkSync } from "node:fs";
+import { downloadFile, fetchJson, parseRef } from "./api.js";
 import {
-  detailCount,
+  detailUrl,
   ensureBase,
   fail,
   indexUrl,
   paths,
   readJson,
   readJsonl,
+  writeDetailsJsonl,
   writeJson,
   writeJsonl,
 } from "./store.js";
-import { downloadFile, parseRef } from "./api.js";
 import type { DictIndexMeta, FieldRec, RawTable, TableMeta } from "./types.js";
 
 interface RawIndex extends DictIndexMeta {
@@ -78,28 +79,41 @@ export async function syncFields(base: string, jobs: number): Promise<void> {
     fail("请先运行 yonbip-dict sync");
   }
   const tables = readJsonl<TableMeta>(paths.tablesJsonl);
-  const missing = tables.filter((t) => !existsSync(paths.detailFile(t.id)));
+  const existing = existsSync(paths.detailsIndex)
+    ? new Set(Object.keys(readJson<Record<string, number>>(paths.detailsIndex)))
+    : new Set<string>();
+
+  // 已下载的明细直接从本地 jsonl 读取（增量同步），缺失的从远程拉
+  const { readDetail } = await import("./store.js");
+  const details = new Map<string, { propertyVO?: unknown[] }>();
+  const missing: TableMeta[] = [];
+  for (const t of tables) {
+    const local = readDetail(t.id);
+    if (local) details.set(t.id, local);
+    else if (!existing.has(t.id)) missing.push(t);
+  }
   if (missing.length) {
     console.log(`拉取字段明细: ${missing.length}/${tables.length} (并发 ${jobs}) ...`);
     await pool(missing, jobs, async (t) => {
-      const { getDetail } = await import("./api.js");
-      await getDetail(base, t.id);
+      const detail = await fetchJson<{ propertyVO?: unknown[] }>(detailUrl(base, t.id));
+      details.set(t.id, detail);
     });
   } else {
-    console.log("字段明细已齐全，仅重建字段索引");
+    console.log("字段明细已齐全，仅重建索引");
   }
 
-  console.log("重建 fields.jsonl ...");
+  console.log("重建 details.jsonl / details-index.json / fields.jsonl ...");
+  const sorted = [...details.keys()].sort();
+  writeDetailsJsonl(sorted.map((id) => ({ id, propertyVO: details.get(id)!.propertyVO ?? [] })));
+
   const rows: FieldRec[] = [];
-  for (const t of tables) {
-    const file = paths.detailFile(t.id);
-    if (!existsSync(file)) continue;
-    const detail = readJson<{ propertyVO?: unknown[] }>(file);
-    const fields = (detail.propertyVO ?? []) as Record<string, unknown>[];
+  for (const id of sorted) {
+    const t = tables.find((x) => x.id === id)!;
+    const fields = (details.get(id)!.propertyVO ?? []) as Record<string, unknown>[];
     for (const f of fields) {
       const ref = parseRef(f.refClassPathHref as string | undefined);
       rows.push({
-        t: t.id,
+        t: id,
         tbl: t.tableName,
         n: (f.name as string) ?? "",
         dn: (f.displayName as string) ?? "",
@@ -111,5 +125,5 @@ export async function syncFields(base: string, jobs: number): Promise<void> {
     }
   }
   writeJsonl(paths.fieldsJsonl, rows);
-  console.log(`字段索引: ${paths.fieldsJsonl} (${rows.length} 条, 缓存明细 ${detailCount()} 个)`);
+  console.log(`字段索引: ${paths.fieldsJsonl} (${rows.length} 条, 表明细 ${sorted.length} 个)`);
 }

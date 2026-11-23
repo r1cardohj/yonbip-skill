@@ -1,5 +1,5 @@
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,12 +17,12 @@ export const paths = {
   tablesJsonl: join(BASE_DIR, "tables.jsonl"),
   fieldsJsonl: join(BASE_DIR, "fields.jsonl"),
   modulesJson: join(BASE_DIR, "modules.json"),
-  detailsDir: join(BASE_DIR, "details"),
-  detailFile: (id: string) => join(BASE_DIR, "details", `${id}.json`),
+  detailsJsonl: join(BASE_DIR, "details.jsonl"),
+  detailsIndex: join(BASE_DIR, "details-index.json"),
 };
 
 export function ensureBase(): void {
-  mkdirSync(paths.detailsDir, { recursive: true });
+  mkdirSync(BASE_DIR, { recursive: true });
 }
 
 export function readJson<T>(file: string): T {
@@ -65,9 +65,45 @@ export function loadModules(): { name: string; code: string; count: number }[] {
   return readJson<{ name: string; code: string; count: number }[]>(paths.modulesJson);
 }
 
+
+let detailIndexCache: Record<string, number> | null = null;
+
+// details.jsonl 按 id 排序逐行存储，details-index.json 记录每行字节偏移，读取为 O(1) seek
+export function readDetail(id: string): { propertyVO?: unknown[] } | null {
+  if (!existsSync(paths.detailsJsonl)) return null;
+  detailIndexCache ??= readJson<Record<string, number>>(paths.detailsIndex);
+  const offset = detailIndexCache[id];
+  if (offset === undefined) return null;
+  const fd = openSync(paths.detailsJsonl, "r");
+  try {
+    const buf = Buffer.alloc(256 * 1024);
+    const n = readSync(fd, buf, 0, buf.length, offset);
+    const nl = buf.subarray(0, n).indexOf(0x0a);
+    if (nl < 0) return null;
+    return JSON.parse(buf.subarray(0, nl).toString("utf8")) as { propertyVO?: unknown[] };
+  } finally {
+    closeSync(fd);
+  }
+}
+
+export function writeDetailsJsonl(rows: { id: string; propertyVO?: unknown[] }[]): void {
+  let offset = 0;
+  const index: Record<string, number> = {};
+  const parts: string[] = [];
+  for (const row of rows) {
+    index[row.id] = offset;
+    const line = JSON.stringify({ id: row.id, propertyVO: row.propertyVO ?? [] }) + "\n";
+    parts.push(line);
+    offset += Buffer.byteLength(line, "utf8");
+  }
+  writeFileSync(paths.detailsJsonl, parts.join(""), "utf8");
+  writeJson(paths.detailsIndex, index);
+  detailIndexCache = null;
+}
+
 export function detailCount(): number {
-  if (!existsSync(paths.detailsDir)) return 0;
-  return readdirSync(paths.detailsDir).filter((f) => f.endsWith(".json")).length;
+  if (!existsSync(paths.detailsIndex)) return 0;
+  return Object.keys(readJson<Record<string, number>>(paths.detailsIndex)).length;
 }
 
 export function fail(msg: string): never {
