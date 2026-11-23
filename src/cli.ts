@@ -125,7 +125,9 @@ async function main(): Promise<void> {
     case "table": {
       const name = a.positional[0] ?? fail("缺少表名: yonbip-dict table <表名|id>");
       const t = resolveTable(name);
-      const detail = { ...t, source: `${getBase()}/dict-browser/index.html?id=${t.id}` };  // getBase 仅作展示
+      const base = a.base ?? process.env.YONBIP_DICT_BASE;
+      const source = base ? `${base.replace(/\/$/, "")}/dict-browser/index.html?id=${t.id}` : undefined;
+      const detail = { ...t, ...(source ? { source } : {}) };
       if (a.json) {
         console.log(JSON.stringify(detail, null, 2));
       } else {
@@ -135,7 +137,7 @@ async function main(): Promise<void> {
         console.log(`模块:      ${t.module} (${t.moduleCode})`);
         console.log(`字段数:    ${t.fieldCount} (必输 ${t.requiredCount})`);
         console.log(`主键:      ${t.keyFields.join(", ") || "-"}`);
-        console.log(`字典页面:  ${detail.source}`);
+        console.log(`字典页面:  ${source ?? "（未配置数据源，仅离线信息）"}`);
       }
       break;
     }

@@ -23,8 +23,10 @@ description: 用友 YonBIP 高级版（NC Cloud）开发助手：数据字典查
 
 ## 运行
 
+以下 `<SKILL_DIR>` 指本 skill 的根目录（即 SKILL.md 所在目录），路径均相对它解析：
+
 ```bash
-node /home/houjun/project/yonbip-skill/dist/cli.js <命令> [选项]
+node <SKILL_DIR>/dist/cli.js <命令> [选项]
 ```
 
 若 `dist/` 不存在或改过 `src/`，先 `npm run build`（tsc）。
@@ -68,7 +70,7 @@ node /home/houjun/project/yonbip-skill/dist/cli.js <命令> [选项]
 ## 运行
 
 ```bash
-node /home/houjun/project/yonbip-skill/openapi/dist/cli.js <命令> [选项]
+node <SKILL_DIR>/openapi/dist/cli.js <命令> [选项]
 ```
 
 若 `openapi/dist/` 不存在或改过 `openapi/src/`，先在 `openapi/` 下 `npm run build`。
