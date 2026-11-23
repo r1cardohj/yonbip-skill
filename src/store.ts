@@ -1,11 +1,12 @@
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FieldRec, TableMeta } from "./types.ts";
 
-// 数据字典随 skill 打包（data/ 与 dist/ 同级）；可用 YONBIP_DICT_HOME 覆盖
+// 数据字典随 skill 打包（data/ 与 src/ 同级）；可用 YONBIP_DICT_HOME 覆盖
 const BUNDLED_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "data");
 const BASE_DIR =
   process.env.YONBIP_DICT_HOME ??
@@ -23,6 +24,31 @@ export const paths = {
 
 export function ensureBase(): void {
   mkdirSync(BASE_DIR, { recursive: true });
+}
+
+let lfsPullTried = false;
+
+function isLfsPointer(file: string): boolean {
+  const fd = openSync(file, "r");
+  try {
+    const buf = Buffer.alloc(64);
+    const n = readSync(fd, buf, 0, buf.length, 0);
+    return buf.subarray(0, n).toString("utf8").startsWith("version https://git-lfs");
+  } finally {
+    closeSync(fd);
+  }
+}
+
+// pi install 克隆时若未装 git-lfs，LFS 文件落盘为指针；首次用到时自动 git lfs pull
+export function ensureData(file: string): void {
+  if (!existsSync(file)) {
+    fail(`数据文件缺失: ${file}\n请重新克隆（勿用 zip 下载），并确保安装 git-lfs`);
+  }
+  if (!isLfsPointer(file)) return;
+  if (lfsPullTried || spawnSync("git", ["lfs", "pull"], { cwd: paths.base, stdio: "inherit" }).status !== 0 || isLfsPointer(file)) {
+    fail(`LFS 数据未拉取: ${file}\n请在 skill 目录手动执行: git lfs pull`);
+  }
+  lfsPullTried = true;
 }
 
 export function readJson<T>(file: string): T {
@@ -55,6 +81,7 @@ export function loadFields(): FieldRec[] {
   if (!existsSync(paths.fieldsJsonl)) {
     fail(`未找到字段索引: ${paths.fieldsJsonl}\n请先运行: yonbip-dict sync --fields`);
   }
+  ensureData(paths.fieldsJsonl);
   return readJsonl<FieldRec>(paths.fieldsJsonl);
 }
 
@@ -65,12 +92,12 @@ export function loadModules(): { name: string; code: string; count: number }[] {
   return readJson<{ name: string; code: string; count: number }[]>(paths.modulesJson);
 }
 
-
 let detailIndexCache: Record<string, number> | null = null;
 
 // details.jsonl 按 id 排序逐行存储，details-index.json 记录每行字节偏移，读取为 O(1) seek
 export function readDetail(id: string): { propertyVO?: unknown[] } | null {
   if (!existsSync(paths.detailsJsonl)) return null;
+  ensureData(paths.detailsJsonl);
   detailIndexCache ??= readJson<Record<string, number>>(paths.detailsIndex);
   const offset = detailIndexCache[id];
   if (offset === undefined) return null;

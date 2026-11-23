@@ -14,6 +14,11 @@ description: 用友 YonBIP 高级版（NC Cloud）开发助手：数据字典查
 
 两者配合使用：先用字典搞清楚表结构/字段含义，再用 OpenAPI 取真实数据。
 
+**安装**：`pi install git:github.com/r1cardohj/yonbip-skill`（零构建，Node >= 22.18）。
+**数据初始化（自动）**：表/模块索引随包可用；字段数据走 Git LFS，
+首次执行 `fields`/`field` 时 CLI 检测到 LFS 指针会自动 `git lfs pull`（约 140MB），
+失败则按其报错在 skill 目录手动执行。
+
 ---
 
 # 一、yonbip-dict — 数据字典查询

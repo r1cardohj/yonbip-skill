@@ -1,10 +1,11 @@
 {
-  "name": "yonbip-dict",
-  "version": "0.1.0",
-  "description": "YonBIP 数据字典 CLI 查询工具",
+  "name": "yonbip-skill",
+  "version": "0.2.0",
+  "description": "用友 YonBIP 高级版开发助手 skill：数据字典离线查询 + OpenAPI 调用（OPM 认证）",
   "type": "module",
-  "bin": {
-    "yonbip-dict": "dist/cli.js"
+  "keywords": ["pi-package"],
+  "pi": {
+    "skills": ["./"]
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

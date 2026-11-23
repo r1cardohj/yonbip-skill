@@ -6,27 +6,20 @@
 - **yonbip-api** — OpenAPI CLI（OPM 认证 + 业务接口调用 + 接口目录搜索）
 
 **Agent 使用说明见 [SKILL.md](./SKILL.md)**（含两个 CLI 的命令、工作流和注意事项）。
-**Agent 使用说明见 [SKILL.md](./SKILL.md)**（含两个 CLI 的命令、工作流和注意事项）。
 
 ## 安装到 pi
 
 ```bash
-# 1. 克隆（含 LFS 数据，字典 168MB）
-git lfs install   # 首次使用 LFS 需要先装 git-lfs
-git clone https://github.com/r1cardohj/yonbip-skill.git
-cd yonbip-skill
-
-# 2. 零构建：Node >= 22.18 原生执行 TypeScript，clone 即用
-
-# 3. 注册为 pi skill：软链到 pi 的 skill 扫描目录（路径按你的 pi 配置调整）
-ln -s "$PWD" ~/project/agent-stuff/skills/yonbip-skill
-
-# 4. 验证
-node src/cli.ts table so_saleorder           # 字典：离线查表
-node openapi/src/cli.ts --help               # OpenAPI CLI
+pi install git:github.com/r1cardohj/yonbip-skill
 ```
 
-OpenAPI 使用前还需登录一次（凭证各配各的，存本机 `~/.config/yonbip-api/`）：
+零构建（Node >= 22.18 原生执行 TypeScript）。字典数据按需加载：
+
+- 表/模块索引（3MB）随克隆立即可用：`search` / `table` / `modules` / `info`
+- 字段数据（140MB，Git LFS）在**首次执行 `fields`/`field` 时自动** `git lfs pull`，无需手动
+- 若自动拉取失败（如未装 git-lfs），按报错提示在 skill 目录手动 `git lfs pull`
+
+OpenAPI 使用前需登录一次（凭证各配各的，存本机 `~/.config/yonbip-api/`）：
 
 ```bash
 node openapi/src/cli.ts auth login \
@@ -34,12 +27,17 @@ node openapi/src/cli.ts auth login \
   --app-secret <应用密文> --pub-key <公钥> --biz-center <账套编码>
 ```
 
-pi 新会话即自动加载 `yonbip-skill`。
-pi 新会话即自动加载 `yonbip-skill`。
-
 ## 安装到其他 Agent
 
-第 1、2 步（克隆 + 构建）与上面相同，区别在于 skill 注册目录：
+不支持 `pi install` 时手动克隆（需 git-lfs，装后执行一次 `git lfs pull`）：
+
+```bash
+git clone https://github.com/r1cardohj/yonbip-skill.git
+cd yonbip-skill
+```
+注册到各 Agent 的 skill 目录：
+## 安装到其他 Agent
+
 
 ```bash
 # Claude Code：个人级 skill
@@ -57,7 +55,7 @@ mkdir -p .claude/skills && ln -s ../../ .claude/skills/yonbip-skill
 
 如果目标 Agent 不支持 SKILL.md，还有两条路：
 
-1. **只用 CLI，不接 Agent**：两个 CLI 均可独立使用，上面的构建 + auth login 即可；
+1. **只用 CLI，不接 Agent**：两个 CLI 均可独立使用，克隆后 + auth login 即可；
 2. **手动接规则**：把 [SKILL.md](./SKILL.md) 的内容粘贴到该 Agent 的规则/记忆
    配置里（如 Cursor 的 `.cursor/rules/`、自定义 system prompt），
    并把 CLI 绝对路径替换进去。
@@ -68,7 +66,7 @@ mkdir -p .claude/skills && ln -s ../../ .claude/skills/yonbip-skill
 ├── SKILL.md            # skill 入口（唯一）
 ├── README.md
 ├── src/                # yonbip-dict（Node 直接执行，零构建）
-├── data/               # 字典数据（约 137MB，随 skill 打包）
+├── data/               # 字典数据（索引 3MB 随包；字段 140MB 走 LFS 按需拉）
 ├── openapi/
 │   ├── src/            # yonbip-api（Node 直接执行）
 │   └── data/           # OpenAPI 接口目录（2156 个接口）
