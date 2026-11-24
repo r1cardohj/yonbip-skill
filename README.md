@@ -5,7 +5,7 @@
 - **yonbip-dict** — 数据字典查询 CLI（13099 张表 / 51 万字段，数据打包离线查）
 - **yonbip-api** — OpenAPI CLI（OPM 认证 + 业务接口调用 + 接口目录搜索 + 档案参照解析 refs）
 
-**Agent 使用说明见 [SKILL.md](./SKILL.md)**（含两个 CLI 的命令、工作流和注意事项）。
+**Agent 使用说明见 [SKILL.md](./SKILL.md)**（含三个 CLI 的命令、工作流和注意事项）。
 
 ## 安装到 pi
 
@@ -55,7 +55,7 @@ mkdir -p .claude/skills && ln -s ../../ .claude/skills/yonbip-skill
 
 如果目标 Agent 不支持 SKILL.md，还有两条路：
 
-1. **只用 CLI，不接 Agent**：两个 CLI 均可独立使用，克隆后 + auth login 即可；
+1. **只用 CLI，不接 Agent**：三个 CLI 均可独立使用，克隆后 + auth login 即可；
 2. **手动接规则**：把 [SKILL.md](./SKILL.md) 的内容粘贴到该 Agent 的规则/记忆
    配置里（如 Cursor 的 `.cursor/rules/`、自定义 system prompt），
    并把 CLI 绝对路径替换进去。
@@ -70,16 +70,19 @@ mkdir -p .claude/skills && ln -s ../../ .claude/skills/yonbip-skill
 ├── openapi/
 │   ├── src/            # yonbip-api（Node 直接执行）
 │   └── data/           # OpenAPI 接口目录/真实URL（随包）+ 接口文档（16MB，LFS 按需拉）
+├── db/
+│   └── src/            # yonbip-db 数据库直连 CLI（SQL Server，Node 直接执行）
 └── package.json
 ```
 
 ## 运行与开发
 
-两个 CLI 均零依赖，Node >= 22.18 原生执行 TypeScript（类型剥离），无需构建：
+三个 CLI 均零依赖（yonbip-db 仅 mssql 一个驱动依赖），Node >= 22.18 原生执行 TypeScript（类型剥离），无需构建：
 
 ```bash
 node src/cli.ts <命令>           # yonbip-dict
 node openapi/src/cli.ts <命令>   # yonbip-api
+node db/src/cli.ts <命令>        # yonbip-db
 ```
 
 改源码后跑 `npm run typecheck`（tsc --noEmit）做类型检查即可，凭证存于用户目录（`~/.config/yonbip-api/`，

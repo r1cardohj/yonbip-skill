@@ -1,18 +1,20 @@
 ---
 name: yonbip-skill
-description: 用友 YonBIP 高级版（NC Cloud）开发助手：数据字典查询（表/字段/引用/枚举，13 万表离线查）+ OpenAPI 调用（OPM 认证、业务接口取数、接口目录搜索）。做二开、联调、查数时先用字典确认结构，再用 OpenAPI 拉真实数据。
+description: 用友 YonBIP 高级版（NC Cloud）开发助手：数据字典查询（表/字段/引用/枚举，13 万表离线查）+ OpenAPI 调用（OPM 认证、业务接口取数、接口目录搜索）+ 数据库直连（SQL Server 通用表查询，模板/单据数据实时查）。做二开、联调、查数时先用字典确认结构，再用 OpenAPI 或 DB 拉真实数据。
 ---
 
 # YonBIP 开发助手
 
-一个 skill，两个 CLI：
+一个 skill，三个 CLI：
 
 | CLI | 路径 | 用途 |
 |---|---|---|
 | yonbip-dict | `src/cli.ts` | 数据字典离线查询（数据已打包在 `data/`） |
 | yonbip-api | `openapi/src/cli.ts` | OpenAPI 认证 + 业务接口调用 |
+| yonbip-db | `db/src/cli.ts` | 数据库直连（SQL Server；SELECT 放行，写操作需 --confirm） |
 
-两者配合使用：先用字典搞清楚表结构/字段含义，再用 OpenAPI 取真实数据。
+配合使用：先用字典搞清楚表结构/字段含义，再按场景取数——OpenAPI 覆盖对外
+接口，db 覆盖所有表（模板、参数、单据数据）。
 
 **安装**：`pi install git:github.com/r1cardohj/yonbip-skill`（零构建，Node >= 22.18）。
 **数据初始化（自动）**：表/模块索引随包可用；字段数据走 Git LFS，
@@ -171,7 +173,58 @@ node openapi/src/cli.ts refs types                  # 看每类档案的接口/�
 
 ---
 
-# 三、通用注意事项
+# 三、yonbip-db — 数据库直连
+
+直连数据库做通用表查询（当前支持 SQL Server，驱动可扩展）。与 yonbip-api 互补：
+OpenAPI 覆盖开放的接口，db 覆盖**所有表**——模板（pub_billtemplet*）、参数、单据数据都能查。
+SELECT 直接放行，UPDATE/DELETE/INSERT/DDL 必须显式 `--confirm`（agent 代跑写操作前
+要把 SQL 报给用户确认）。
+
+## 运行
+
+```bash
+node <SKILL_DIR>/db/src/cli.ts <命令> [选项]
+```
+
+## 命令速查
+
+| 命令 | 用途 |
+|---|---|
+| `auth login --host <h> --port 1433 --database <库> --user <u> --password <p>` | 配置连接（保存前自动验证连通性） |
+| `auth status` / `auth logout` | 查看 / 删除配置 |
+| `query "SELECT ..."` | 只读查询，自动拒绝写语句、多语句、SELECT INTO |
+| `exec "UPDATE ..." --confirm` | 写操作；不加 `--confirm` 只打印不执行 |
+| `tables [过滤]` / `columns <表>` | 看有哪些表 / 看表结构 |
+
+通用选项：`--json`（结构化输出）、`--timeout <秒>`。
+
+## 典型工作流
+
+```bash
+# 1. 配置连接（一次性，存 ~/.config/yonbip-db/config.json，600 权限）
+node db/src/cli.ts auth login --host <db-host> --database <库名> --user <只读账号> --password <pwd>
+
+# 2. 找表、看结构
+node db/src/cli.ts tables billtemplet
+node db/src/cli.ts columns pub_billtemplet_b
+
+# 3. 查数据（只读随便查）
+node db/src/cli.ts query "SELECT pk_billtemplet, name FROM pub_billtemplet WHERE billtype='263X'" --json
+
+# 4. 写操作必须先给用户看 SQL，确认后加 --confirm
+node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemplet='...'" --confirm
+```
+
+要点：
+
+- 账号建议**只读**；exec 的护栏是 CLI 层的最后防线，不能替代账号权限控制。
+- 模板类数据（pub_billtemplet / pub_billtemplet_b）随账套配置频繁变动，**只实时查、
+  不做离线缓存**。
+- 连接配置支持多套 profile（`--profile <名>`），多环境切换。
+
+---
+
+# 四、通用注意事项
 
 - 上下文纪律：字典有 13 万张表、接口目录 2000+，绝对不要把清单全量读进上下文，
   一律 CLI 按需查询（默认 30 条以内），`--json` 供脚本精确解析。
