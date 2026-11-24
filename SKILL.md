@@ -196,6 +196,7 @@ node <SKILL_DIR>/db/src/cli.ts <命令> [选项]
 | `exec "UPDATE ..." --confirm` | 写操作；不加 `--confirm` 只打印不执行 |
 | `tables [过滤]` / `columns <表>` | 看有哪些表 / 看表结构 |
 | `template <关键词\|模板pk>` | 单据模板实时查询：页面字段、可编辑/必填/参照、**用户自定义项高亮** |
+| `userdef <关键词\|--table 表名>` | 自定义项命名查询：vdefN/vbdefN 槽位 → 用户在界面上起的名字、类型、物理列校验 |
 
 通用选项：`--json`（结构化输出）、`--timeout <秒>`。
 
@@ -216,6 +217,10 @@ node db/src/cli.ts query "SELECT pk_billtemplet, name FROM pub_billtemplet WHERE
 node db/src/cli.ts template 报销单
 node db/src/cli.ts template <模板pk> --json   # 给 agent 精确解析
 
+# 5. 自定义字段的用户命名（vdefN 槽位只有「自定义项N」，用户起的名字在自定义项设置里）
+node db/src/cli.ts userdef --table sc_order_b   # 从物理表反查：表→单据类型→命名→物理列校验
+node db/src/cli.ts userdef 委外                  # 或按单据类型/规则名关键词查
+
 # 4. 写操作必须先给用户看 SQL，确认后加 --confirm
 node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemplet='...'" --confirm
 ```
@@ -229,6 +234,9 @@ node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemple
   （bd_userdefrule/bd_userdefitem：单据类型族如 264X → 规则 erm_264X_H/B/C → propindex→showname，
   表头/表体不同会同时标注）→ 数据字典（fields.jsonl，按源文件 mtime 缓存索引到 ~/.cache/yonbip-db/）；
   `[自定义]` = 用户自定义项/自由项（def*/defitem*/zyx*/userdef*）。
+- 页面没注册模板（pub_billtemplet 查不到）时，`userdef --table <表名>` 走另一条链路：物理表
+  → bd_billtype.component → 单据类型族 → bd_userdefrule（_H 表头 vdefN / _B、_C 表体 vbdefN）
+  → 用户命名，并校验物理列是否真实存在。
 - 连接配置支持多套 profile（`--profile <名>`），多环境切换。
 
 ---

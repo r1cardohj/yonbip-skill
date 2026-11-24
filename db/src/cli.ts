@@ -3,6 +3,7 @@ import { configPath, fail, loadConfig, removeProfile, updateProfile } from "./co
 import { runQuery, type QueryResult } from "./client.ts";
 import { assertReadOnly } from "./guard.ts";
 import { queryTemplates } from "./template.ts";
+import { queryUserDef } from "./userdef.ts";
 
 interface Args {
   cmd?: string;
@@ -53,6 +54,9 @@ const HELP = `yonbip-db — YonBIP 高级版数据库直连 CLI（SQL Server）
   template <关键词>  单据模板查询（实时，无缓存）：页面上有哪些字段、
                 哪些是用户自定义项、可编辑/必填/参照关系
                 --limit <n>    最多展开几个模板（默认 3）
+                --json         结构化输出
+  userdef <关键词>   用户自定义项命名查询（解决 vdefN/vbdefN 只有槽位名的问题）
+                --table <表名> 从物理表反查：表 → 单据类型 → 用户起的字段名
                 --json         结构化输出
 
 凭证存储: ${configPath()}（权限 600）
@@ -174,6 +178,10 @@ async function main(): Promise<void> {
         json: "json" in a.opts,
         limit: parseInt(a.opts.limit ?? "3", 10) || 3,
       });
+      break;
+    }
+    case "userdef": {
+      await queryUserDef({ keyword: a.sub, table: a.opts.table, json: "json" in a.opts });
       break;
     }
     default:
