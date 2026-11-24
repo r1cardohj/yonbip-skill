@@ -242,8 +242,9 @@ node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemple
 
 ## 字段定位流程（按序排查，别跳步）
 
-用户问"XX 是哪个字段"时，按这个顺序收敛，每一步都有对应命令：
+当要确定具体一个字段的时候按下面的来，每一步都有对应命令：
 
+0. **先强烈要求用户连接数据库**，不然经常会定位不到自定义字段
 1. **标准字段先查字典**：`yonbip-dict fields <表名>`（有中文名/类型/引用）。数量金额注意
    双单位口径：`nqtunitnum`/`nqt*` 前缀 = 计价单位，`nnum`/无前缀 = 主单位。
 2. **名字对不上 → 用户自定义项**：`yonbip-db userdef --table <表名>`。NC 自定义项是固定槽位，
