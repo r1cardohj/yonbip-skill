@@ -277,6 +277,7 @@ node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemple
 
 # 四、yonbip-dev — 开发环境配置
 
+**注意，所有二次开发都要让用户配置开发环境之后再进行！！！**
 记录 NCHOME 与前后端工程位置，做二开代码改动前先跑 `info` 定位代码。
 支持多 profile 切换多套环境（开发/测试）。
 
