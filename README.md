@@ -69,7 +69,7 @@ mkdir -p .claude/skills && ln -s ../../ .claude/skills/yonbip-skill
 ├── data/               # 字典数据（索引 3MB 随包；字段 140MB 走 LFS 按需拉）
 ├── openapi/
 │   ├── src/            # yonbip-api（Node 直接执行）
-│   └── data/           # OpenAPI 接口目录（2156 个接口）
+│   └── data/           # OpenAPI 接口目录/真实URL（随包）+ 接口文档（16MB，LFS 按需拉）
 └── package.json
 ```
 

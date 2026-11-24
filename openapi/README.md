@@ -26,8 +26,8 @@ yonbip-skill 的 OpenAPI 子 CLI（认证 + 业务接口调用 + 接口目录搜
   请求体需包成 `{busiParamJson, sysParamJson}`，见 `scripts/fetch-api-urls.mjs`）。
 - `data/api-docs.json` — 接口 pk → 请求/响应示例与参数表，来自
   `POST /nccloud/opm/apimanager/QueryModalCardAction.do`（`scripts/fetch-api-docs.mjs`）。
-  **不随包提交**（16MB，且与环境版本相关），用 `npm run fetch:docs` 生成；
-  缺失时 `refs` 走通用请求体兜底，`doc` 会提示先导出。
+  16MB，走 Git LFS；`pi install` 克隆得到的是指针时，`doc`/`refs` 会自动 `git lfs pull`，
+  失败则降为「无文档」（`refs` 用通用请求体兜底）。环境升级后可 `npm run fetch:docs` 重新导出。
   抓取脚本需要 `~/.config/yonbip-api/opm-cookies.json`（浏览器登录 OPM 后导出的
   `nccloudsessionid`/`JSESSIONID`），支持断点续跑。
 - `data/ref-map.json` — 引用模型 → 查询接口映射表（`refs` 命令用）：字典引用模型
