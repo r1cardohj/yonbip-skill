@@ -92,7 +92,8 @@ node <SKILL_DIR>/openapi/src/cli.ts <命令> [选项]
 |---|---|
 | `auth login --gateway <url> --app-id <id> --app-secret <s> --pub-key <k> --biz-center <c>` | 配置凭证并取 token（存 `~/.config/yonbip-api/`，600 权限） |
 | `auth status` / `auth refresh` / `auth logout` | token 状态 / 强制刷新 / 删除配置 |
-| `apis <关键词>` | 在接口目录（2156 个，`openapi/data/api-catalog.json`）中搜索 |
+| `apis <关键词>` | 在接口目录（2156 个接口）中搜索，直接给出真实请求路径 |
+| `doc <关键词\|pk>` | 查接口文档：真实 URL、请求示例、参数表（本地缓存的 OPM 文档） |
 | `refs <档案> <关键词>` | 按名称/编码查档案主数据，返回 pk / code / name（名字 → pk 解析） |
 | `refs types` | 列出 refs 支持的档案类型及映射状态 |
 | `call <path> [--body '<json>'\|@file]` | 调 OpenAPI（POST），自动带认证头 |
@@ -105,9 +106,13 @@ node <SKILL_DIR>/openapi/src/cli.ts <命令> [选项]
 node openapi/src/cli.ts auth login --gateway http://<host>:<port> \
   --app-id <应用编码> --app-secret <应用密文> --pub-key <公钥> --biz-center <账套编码>
 
-# 2. 找接口
+# 2. 找接口（apis 直接给真实 URL）
 node openapi/src/cli.ts apis 现存量
-# → 0001Z8100000000DJ1ZH  40 供应链/4008 库存管理/400813 库存存量/40081301 查询现存量
+# → 0001Z8100000000DJ1ZH  /nccloud/api/ic/onhand/onhandQuery
+#    40081301 查询现存量 — 40 供应链/…
+
+# 拿请求体格式：doc 看请求示例
+node openapi/src/cli.ts doc 1001Z010000000008HBM
 
 # 3. 调接口（业务参数必填项报错就按提示补，如 pk_org / cmaterialoid）
 #    档案 pk 先用 refs 按名字解析：
@@ -122,9 +127,11 @@ node openapi/src/cli.ts call ic/onhand/onhandQuery \
 
 ## 注意事项
 
-- **接口路径**：业务接口形如 `nccloud/api/{模块}/{组件}/{资源}/{动词}`，`call` 的
-  path 参数相对 `nccloud/api`。具体路径和必填字段在 OPM 的接口文档里查
-  （`apis` 命令只能按名称定位接口）。
+- **接口路径**：`call` 的 path 参数相对 `nccloud/api`，真实路径用 `apis` 查
+  （数据来自 OPM 接口维护，不是推断），请求体格式用 `doc` 看示例。
+- **请求体结构**：档案类查询多为 `{"ufinterface":{"sender":"default","data":{…条件, pageInfo}}}`
+  —— 查询条件嵌在 `ufinterface.data` 里，放顶层会报 `ufinterface:null`。各接口
+  结构不完全一致，以 `doc` 输出为准。
 - **权限**：`call` 报"第三方应用没有 xxx 的权限" → 去 OPM 给应用关联该 API。
 - **业务参数**：报"字段:xxx为必输项"是正常的业务校验，按提示补参数即可；
   组织/物料/客户等档案 pk 用 `refs` 命令按名称解析（见下节）。
@@ -141,17 +148,24 @@ node openapi/src/cli.ts refs org 华东          # 组织（含集团/财务/库
 node openapi/src/cli.ts refs 客户 华为          # 中文别名也行
 node openapi/src/cli.ts refs --ref 75ba9a0nxd 华东  # 直接吃字典 fields 输出的 [引用模型 id]
 node openapi/src/cli.ts refs material --code M001   # 按编码精确查
+node openapi/src/cli.ts refs psndoc 姚 --org <组织pk>        # 人员接口必填业务单元
+node openapi/src/cli.ts refs user 周 --org 1000              # 用户接口的 pk_org 要组织编码
 node openapi/src/cli.ts refs --json ...             # 结构化输出
+node openapi/src/cli.ts refs types                  # 看每类档案的接口/验证状态/必填参数
 ```
 
 要点：
 
 - 映射表 `openapi/data/ref-map.json`：引用模型（字典 refId/表名/中文别名）→ 接口目录
-  里的查询接口（pk + path），覆盖 51 万字段里最高频的 23 类档案。
-- **路径除已标注 verified 的外均为按命名约定推断**（接口目录不含 URL）。首次调用
-  失败时按报错里的接口 pk 到 OPM 核对实际路径，然后写
-  `~/.config/yonbip-api/ref-map.json` 覆盖（同键条目字段级合并，也可加全新档案），
-  或在 OPM【关联API】给应用勾选该查询接口。
+  里的查询接口（pk + 真实 path），覆盖 51 万字段里最高频的 23 类档案。
+- path 取自 OPM 接口维护数据（`openapi/data/api-urls.json`），`verified: true` 表示
+  已在真实环境调用通过，其余尚未做端到端调用（不等于路径错）。
+- 请求体以 OPM 请求示例为模板（`openapi/data/api-docs.json`），再填 code/name/pageInfo。
+  注意各接口必填条件不同：人员/物料/分类要 `--org`，且**有的接口 pk_org 填主键、
+  有的要填组织编码**（`refs types` 会标注），传错报「参数pk_org数据在系统中不存在」。
+- 名称条件多数是精确匹配：`refs` 服务端查不到时会自动去掉条件拉一批再本地模糊过滤。
+- 调用失败时可用 `doc <pk>` 看请求示例，或写 `~/.config/yonbip-api/ref-map.json`
+  覆盖（同键条目字段级合并，也可加全新档案）。
 - 目录中没有查询接口的档案（单据类型、币种、仓库等），`refs` 会说明原因并给出
   相关接口建议；这类 pk 需登录界面或用其他条件查询接口获取。
 

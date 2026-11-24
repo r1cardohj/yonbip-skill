@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadApiDoc } from "./catalog.ts";
 
 export interface RefApi {
   pk: string;
@@ -18,6 +19,15 @@ export interface RefEntry {
   pkField: string;
   codeField: string;
   nameField: string;
+  /** 请求体里编码/名称/组织/集团的字段名，缺省 code/name/pk_org/pk_group */
+  codeParam?: string;
+  nameParam?: string;
+  orgParam?: string;
+  groupParam?: string;
+  /** true 表示该接口的 pk_org 实际要填组织编码而非主键 */
+  orgAsCode?: boolean;
+  /** true 表示该接口没有分页参数，传 pageInfo 会报错 */
+  noPaging?: boolean;
   api: RefApi | null;
   fixedBody?: Record<string, unknown>;
   note?: string;
@@ -66,11 +76,60 @@ export function resolveEntryByRefId(map: RefMapData, refId: string): RefEntry | 
   return Object.values(map.entries).find((e) => e.refIds.includes(refId));
 }
 
-export function buildBody(entry: RefEntry, opts: { keyword?: string; code?: string; limit: number }): Record<string, unknown> {
-  const body: Record<string, unknown> = { ...(entry.fixedBody ?? {}) };
-  if (opts.code) body.code = opts.code;
-  else if (opts.keyword) body.name = opts.keyword;
-  body.page = { pageIndex: 0, pageSize: opts.limit };
+// 档案查询接口的请求体以 OPM 的请求示例为模板（data/api-docs.json）：
+// 多数接口形如 { ufinterface: { sender, data: { 条件..., pageInfo } } }，也有直接把条件放顶层的，
+// 且 pageInfo 有些接口放在 ufinterface 层而不是 data 层，所以按示例原位置回写。
+// 没抓到示例时用通用 ufinterface 结构兜底。
+function pickData(body: Record<string, unknown>): { data: Record<string, unknown>; host: Record<string, unknown> } {
+  const uf = body.ufinterface as Record<string, unknown> | undefined;
+  if (uf && typeof uf === "object" && !Array.isArray(uf)) {
+    if (!uf.sender) uf.sender = "default";
+    if (!uf.data || typeof uf.data !== "object" || Array.isArray(uf.data)) uf.data = {};
+    return { data: uf.data as Record<string, unknown>, host: uf };
+  }
+  if (Object.keys(body).length) return { data: body, host: body };
+  const wrapped = { sender: "default", data: {} as Record<string, unknown> };
+  body.ufinterface = wrapped;
+  return { data: wrapped.data, host: wrapped };
+}
+
+export interface BuildOpts {
+  keyword?: string;
+  code?: string;
+  org?: string;
+  group?: string;
+  limit: number;
+}
+
+export function buildBody(entry: RefEntry, opts: BuildOpts): Record<string, unknown> {
+  let body: Record<string, unknown> = {};
+  const example = entry.api ? loadApiDoc(entry.api.pk)?.requestExample : null;
+  if (example) {
+    try {
+      body = JSON.parse(example) as Record<string, unknown>;
+    } catch {
+      body = {};
+    }
+  }
+
+  const { data, host } = pickData(body);
+  const seesPlaceholderGroup = data.pk_group === "1";
+
+  Object.assign(data, entry.fixedBody ?? {});
+  const codeParam = entry.codeParam ?? "code";
+  const nameParam = entry.nameParam ?? "name";
+  if (opts.code) data[codeParam] = [opts.code];
+  else if (opts.keyword) data[nameParam] = [opts.keyword];
+  if (opts.org) data[entry.orgParam ?? "pk_org"] = [opts.org];  if (opts.group) data[entry.groupParam ?? "pk_group"] = opts.group;
+  else if (seesPlaceholderGroup) data.pk_group = null;
+
+  if (entry.noPaging) return body;
+  const pageInfo = { pageIndex: "0", pageSize: String(opts.limit) };
+  const exampleHasPaging = example ? /"pageInfo"/.test(example) : true;
+  // 有些接口根本没有分页参数，传了反而报错，所以只在示例里出现过分页时才回写
+  if (!exampleHasPaging) return body;
+  if ("pageInfo" in host && !("pageInfo" in data)) host.pageInfo = pageInfo;
+  else data.pageInfo = pageInfo;
   return body;
 }
 
@@ -109,7 +168,12 @@ export function extractRows(body: unknown, entry: RefEntry, keyword?: string): E
   const rows: RefRow[] = [];
   for (const item of raw) {
     if (!item || typeof item !== "object") continue;
-    const row = item as Record<string, unknown>;
+    let row = item as Record<string, unknown>;
+    // 有些接口把单据包在单键对象里，如 { "uapbd.project": { ...字段 } }
+    const keys = Object.keys(row);
+    if (keys.length === 1 && row[keys[0]] && typeof row[keys[0]] === "object" && !Array.isArray(row[keys[0]])) {
+      row = row[keys[0]] as Record<string, unknown>;
+    }
     rows.push({
       pk: pick(row, entry.pkField, "pk", "refpk", "id"),
       code: pick(row, entry.codeField, "code", "refcode"),

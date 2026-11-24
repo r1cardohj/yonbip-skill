@@ -3,6 +3,8 @@ import { activeProfile, loadConfig, type Profile } from "./config.ts";
 
 // 业务接口 header 约定与官方 SDK getAPIRetrun 一致：
 // access_token / client_id / signature / repeat_check=Y / ucg_flag=y
+const CALL_TIMEOUT_MS = 30_000;
+
 export async function callApi(
   path: string,
   body?: unknown
@@ -29,6 +31,7 @@ export async function callApi(
       "Content-Type": "application/json;charset=utf-8",
     },
     body: json || undefined,
+    signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
   });
   const text = await res.text();
   try {

@@ -7,7 +7,9 @@
     "yonbip-api": "dist/cli.js"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "fetch:urls": "node scripts/fetch-api-urls.mjs",
+    "fetch:docs": "node scripts/fetch-api-docs.mjs"
   },
   "engines": {
     "node": ">=22.18"

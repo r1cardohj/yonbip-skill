@@ -2,137 +2,377 @@
   "_doc": {
     "说明": "引用模型 → 查询接口映射表，供 yonbip-api refs 命令使用。",
     "键": "档案类型短名（refs <类型> 用）；aliases 支持中文/表名/字段名模糊匹配；refIds 是数据字典引用模型 id（fields 输出 [id]），可直接 refs --ref <id>。",
-    "verified": "false 表示 path 按 NC Cloud openapi 命名约定（nccloud/api/{模块}/{组件}/{资源}/{动词}）推断，未经真实环境验证；首次调用失败时按报错中的 pk 到 OPM 核对路径，然后改 ~/.config/yonbip-api/ref-map.json 覆盖（同键条目字段级合并）。",
-    "api 为 null": "接口目录中该档案没有查询类接口，refs 会给出目录搜索建议。"
+    "verified": "path 均取自 OPM 接口维护数据（data/api-urls.json，可用 apis 命令查）；verified=true 表示该路径已在真实环境调用通过，false 表示尚未做过端到端调用（不等于路径错）。调用报必输参数时用 --org/--group 补条件，或用 ~/.config/yonbip-api/ref-map.json 覆盖（同键条目字段级合并）。",
+    "api 为 null": "接口目录中该档案没有查询类接口，refs 会给出目录搜索建议。",
+    "数据来源": "api-catalog.json（接口目录树）、api-urls.json（真实 URL，来自 OPM LoadApiVOAction）、api-docs.json（请求/响应示例与参数表，来自 OPM QueryModalCardAction）。后两个由 scripts/fetch-api-urls.mjs、scripts/fetch-api-docs.mjs 抓取，需要 ~/.config/yonbip-api/opm-cookies.json（OPM 登录会话）。"
   },
   "version": "yonbip3ddcr5",
   "entries": {
     "org": {
       "label": "组织/业务单元（含集团/各职能组织）",
-      "aliases": ["组织", "业务单元", "组织单元", "集团", "公司", "财务组织", "库存组织", "销售组织", "采购组织", "资金组织", "资产组织", "项目组织", "工厂", "人力资源组织", "行政组织", "物流组织", "报表组织", "责任组织", "维修组织", "质检中心", "共享服务中心", "预算组织", "org", "pk_org", "org_orgs"],
-      "refIds": ["mi88yviopo", "y6mzoae37q", "7mg0i2j2q4", "uipnw933xf", "mkrx9n8w2s", "ze36ltoc6i", "0sxbyru6jc", "75ba9a0nxd", "dc18bg4dwb", "lbp8xvbvsq", "fcxdv39ow5", "papblatc6c", "1g8fo9qbhx", "pbg4ethapk", "66ugra6215", "j4ccdg2b32", "nqyp8svsav", "98bxnzk8vy", "vb2atm3kt6", "fwj1rb3q51", "kp0anrv7kq", "25wogbqzwt", "5y0vek0j1j", "75yanxtr0w", "iqsvzntday", "d9wo3vj3cy", "d5ture3fl4", "7pmya7ur3y", "pvjdwet3b3", "ku9qa9tfjs", "gfhhr1qwwk", "jx8kcz4zmg", "w1sj058y2w"],
+      "aliases": [
+        "组织",
+        "业务单元",
+        "组织单元",
+        "集团",
+        "公司",
+        "财务组织",
+        "库存组织",
+        "销售组织",
+        "采购组织",
+        "资金组织",
+        "资产组织",
+        "项目组织",
+        "工厂",
+        "人力资源组织",
+        "行政组织",
+        "物流组织",
+        "报表组织",
+        "责任组织",
+        "维修组织",
+        "质检中心",
+        "共享服务中心",
+        "预算组织",
+        "org",
+        "pk_org",
+        "org_orgs"
+      ],
+      "refIds": [
+        "mi88yviopo",
+        "y6mzoae37q",
+        "7mg0i2j2q4",
+        "uipnw933xf",
+        "mkrx9n8w2s",
+        "ze36ltoc6i",
+        "0sxbyru6jc",
+        "75ba9a0nxd",
+        "dc18bg4dwb",
+        "lbp8xvbvsq",
+        "fcxdv39ow5",
+        "papblatc6c",
+        "1g8fo9qbhx",
+        "pbg4ethapk",
+        "66ugra6215",
+        "j4ccdg2b32",
+        "nqyp8svsav",
+        "98bxnzk8vy",
+        "vb2atm3kt6",
+        "fwj1rb3q51",
+        "kp0anrv7kq",
+        "25wogbqzwt",
+        "5y0vek0j1j",
+        "75yanxtr0w",
+        "iqsvzntday",
+        "d9wo3vj3cy",
+        "d5ture3fl4",
+        "7pmya7ur3y",
+        "pvjdwet3b3",
+        "ku9qa9tfjs",
+        "gfhhr1qwwk",
+        "jx8kcz4zmg",
+        "w1sj058y2w"
+      ],
       "table": "org_orgs",
       "pkField": "pk_org",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "0001Z010000000008W99", "name": "根据参数查询组织", "path": "uapbd/org/orgstruquery", "verified": false },
+      "api": {
+        "pk": "0001Z010000000008W99",
+        "name": "根据参数查询组织",
+        "path": "riaorg/orgmanage/org/queryOrgByParams",
+        "verified": true
+      },
       "note": "各职能组织（财务/库存/销售…）都是业务单元的职能视图，查 pk_org 用本条目即可；如需按职能过滤，参数名以 OPM 接口文档为准后在本地 ref-map.json 里加 fixedBody。"
     },
     "dept": {
       "label": "部门",
-      "aliases": ["部门", "dept", "pk_dept", "org_dept"],
-      "refIds": ["uteazrmgb2", "4831vlnhw0"],
+      "aliases": [
+        "部门",
+        "dept",
+        "pk_dept",
+        "org_dept"
+      ],
+      "refIds": [
+        "uteazrmgb2",
+        "4831vlnhw0"
+      ],
       "table": "org_dept",
       "pkField": "pk_dept",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "1001Z010000000008HBM", "name": "支持所有参数查询部门", "path": "uapbd/dept/deptquery", "verified": false }
+      "api": {
+        "pk": "1001Z010000000008HBM",
+        "name": "支持所有参数查询部门",
+        "path": "riaorg/org/dept/queryDeptByParams",
+        "verified": true
+      }
     },
     "psndoc": {
       "label": "人员",
-      "aliases": ["人员", "人员基本信息", "员工", "业务员", "psndoc", "pk_psndoc", "bd_psndoc"],
-      "refIds": ["drnjzhmtjr"],
+      "aliases": [
+        "人员",
+        "人员基本信息",
+        "员工",
+        "业务员",
+        "psndoc",
+        "pk_psndoc",
+        "bd_psndoc"
+      ],
+      "refIds": [
+        "drnjzhmtjr"
+      ],
       "table": "bd_psndoc",
       "pkField": "pk_psndoc",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "1001Z010000000009YWR", "name": "查询人员基本信息", "path": "uapbd/psndoc/psndocquery", "verified": false }
+      "orgParam": "pk_org",
+      "api": {
+        "pk": "1001Z010000000009YWR",
+        "name": "查询人员基本信息",
+        "path": "uapbd/psndocmanage/querypsndoc/condition",
+        "verified": true
+      },
+      "note": "接口要求至少传入一个业务单元（--org <pk_org>），否则报「传入的业务单元数据为空」。"
     },
     "material": {
       "label": "物料",
-      "aliases": ["物料", "物料基本信息", "material", "pk_material", "cmaterialoid", "bd_material"],
-      "refIds": ["f57z4hk32s", "j8gp1y7641"],
+      "aliases": [
+        "物料",
+        "物料基本信息",
+        "material",
+        "pk_material",
+        "cmaterialoid",
+        "bd_material"
+      ],
+      "refIds": [
+        "f57z4hk32s",
+        "j8gp1y7641"
+      ],
       "table": "bd_material",
       "pkField": "pk_material",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "1001Z01000000000AQCL", "name": "查询物料", "path": "uapbd/material/materialquery", "verified": false }
+      "orgParam": "pk_org",
+      "orgAsCode": true,
+      "api": {
+        "pk": "1001Z01000000000AQCL",
+        "name": "查询物料",
+        "path": "uapbd/material/material/queryMaterial",
+        "verified": true
+      },
+      "note": "pk_org 传组织编码（如 9999），传主键报「数据在系统中不存在」；条件全空时服务端拼出空 where 报 SQL 语法错误。"
     },
     "customer": {
       "label": "客户",
-      "aliases": ["客户", "客户基本信息", "customer", "pk_customer", "bd_customer"],
-      "refIds": ["x851odrb25", "ewwj2r0f7v"],
+      "aliases": [
+        "客户",
+        "客户基本信息",
+        "customer",
+        "pk_customer",
+        "bd_customer"
+      ],
+      "refIds": [
+        "x851odrb25",
+        "ewwj2r0f7v"
+      ],
       "table": "bd_customer",
       "pkField": "pk_customer",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "1001Z010000000007UC4", "name": "查询客户基本信息", "path": "uapbd/customer/customerquery", "verified": false }
+      "api": {
+        "pk": "1001Z010000000007UC4",
+        "name": "查询客户基本信息",
+        "path": "uapbd/customermanage/querycustomerinfo/queryCustomerBaseInfo",
+        "verified": true
+      }
     },
     "supplier": {
       "label": "供应商",
-      "aliases": ["供应商", "供应商基本信息", "supplier", "pk_supplier", "bd_supplier"],
-      "refIds": ["oefzistq4b", "m7vmxthbbq"],
+      "aliases": [
+        "供应商",
+        "供应商基本信息",
+        "supplier",
+        "pk_supplier",
+        "bd_supplier"
+      ],
+      "refIds": [
+        "oefzistq4b",
+        "m7vmxthbbq"
+      ],
       "table": "bd_supplier",
       "pkField": "pk_supplier",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "1001Z01000000000D7AY", "name": "根据条件查询供应商基本信息", "path": "uapbd/supplier/supplierquery", "verified": false }
+      "api": {
+        "pk": "1001Z01000000000D7AY",
+        "name": "根据条件查询供应商基本信息",
+        "path": "uapbd/supplierquery/supplierbaseinfo/supplierbaseinfoquery",
+        "verified": true
+      },
+      "note": "示例里的 pk_group=1 在本环境不存在，不传 --group 时按 pk_group=null 查询（正常返回）。"
     },
     "measdoc": {
       "label": "计量单位",
-      "aliases": ["计量单位", "单位", "measdoc", "pk_measdoc", "bd_measdoc"],
-      "refIds": ["3qkqoo506d"],
+      "aliases": [
+        "计量单位",
+        "单位",
+        "measdoc",
+        "pk_measdoc",
+        "bd_measdoc"
+      ],
+      "refIds": [
+        "3qkqoo506d"
+      ],
       "table": "bd_measdoc",
       "pkField": "pk_measdoc",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "1001Z01000000000DQIP", "name": "查询计量单位", "path": "uapbd/measdoc/measdocquery", "verified": false }
+      "api": {
+        "pk": "1001Z01000000000DQIP",
+        "name": "查询计量单位",
+        "path": "uapbd/measdoc/measdoc/queryMeasdoc",
+        "verified": true
+      }
     },
     "project": {
       "label": "项目",
-      "aliases": ["项目", "项目档案", "project", "pk_project", "bd_project"],
-      "refIds": ["pnnkwz3dss"],
+      "aliases": [
+        "项目",
+        "项目档案",
+        "project",
+        "pk_project",
+        "bd_project"
+      ],
+      "refIds": [
+        "pnnkwz3dss"
+      ],
       "table": "bd_project",
       "pkField": "pk_project",
-      "codeField": "code",
-      "nameField": "name",
-      "api": { "pk": "1001Z0100000005XWENO", "name": "查询项目档案", "path": "uapbd/project/projectquery", "verified": false }
+      "codeField": "project_code",
+      "nameField": "project_name",
+      "codeParam": "project_code",
+      "nameParam": "project_name",
+      "api": {
+        "pk": "1001Z0100000005XWENO",
+        "name": "查询项目档案",
+        "path": "uapbd/projectmanage/projectquery/query",
+        "verified": false
+      },
+      "note": "字段是 project_*；本环境调用恒返回 [1000000001]（该接口在环境中不可用），仅 URL 已确认。"
     },
     "bankdoc": {
       "label": "银行档案",
-      "aliases": ["银行", "银行档案", "bankdoc", "pk_bankdoc", "bd_bankdoc"],
-      "refIds": ["cghkq3yh69"],
+      "aliases": [
+        "银行",
+        "银行档案",
+        "bankdoc",
+        "pk_bankdoc",
+        "bd_bankdoc"
+      ],
+      "refIds": [
+        "cghkq3yh69"
+      ],
       "table": "bd_bankdoc",
       "pkField": "pk_bankdoc",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "1001Z0100000005XWENP", "name": "银行信息全量查询", "path": "uapbd/bankdoc/bankdocquery", "verified": false }
+      "api": {
+        "pk": "1001Z0100000005XWENP",
+        "name": "银行信息全量查询",
+        "path": "uapbd/bankdocmanages/querys",
+        "verified": false
+      },
+      "note": "传 code/name 也会拼出 `where (1=1) and  and ...` 报 SQL 语法错误，本环境该接口不可用。"
     },
     "marbasclass": {
       "label": "物料基本分类",
-      "aliases": ["物料分类", "物料基本分类", "marbasclass", "pk_marbasclass", "bd_marbasclass"],
-      "refIds": ["smy783e3kz"],
+      "aliases": [
+        "物料分类",
+        "物料基本分类",
+        "marbasclass",
+        "pk_marbasclass",
+        "bd_marbasclass"
+      ],
+      "refIds": [
+        "smy783e3kz"
+      ],
       "table": "bd_marbasclass",
       "pkField": "pk_marbasclass",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "1001Z0100000005Z06AM", "name": "物料分类查询", "path": "uapbd/marbasclass/marbasclassquery", "verified": false }
+      "orgParam": "pk_org",
+      "api": {
+        "pk": "1001Z0100000005Z06AM",
+        "name": "物料分类查询",
+        "path": "uapbd/materialclass/query",
+        "verified": true
+      },
+      "note": "需 --org <pk_org>；无分页参数，一次返回全部。",
+      "noPaging": true
     },
     "user": {
       "label": "用户/操作员",
-      "aliases": ["用户", "操作员", "user", "sm_user", "cuserid"],
-      "refIds": ["6cluqprrre"],
+      "aliases": [
+        "用户",
+        "操作员",
+        "user",
+        "sm_user",
+        "cuserid"
+      ],
+      "refIds": [
+        "6cluqprrre"
+      ],
       "table": "sm_user",
       "pkField": "cuserid",
       "codeField": "user_code",
       "nameField": "user_name",
-      "api": { "pk": "1001Z01000000000D78C", "name": "根据条件查询用户信息", "path": "uapbd/user/userquery", "verified": false }
+      "codeParam": "user_code",
+      "orgParam": "pk_org",
+      "orgAsCode": true,
+      "api": {
+        "pk": "1001Z01000000000D78C",
+        "name": "根据条件查询用户信息",
+        "path": "uapbd/usermanager/userquery/queryUsersByCondition",
+        "verified": true
+      },
+      "note": "pk_org 传组织编码（如 1000），传主键会报「参数pk_org数据在系统中不存在」；编码条件用 user_code。"
     },
     "defdoc": {
       "label": "自定义档案",
-      "aliases": ["自定义档案", "defdoc", "pk_defdoc", "bd_defdoc", "生产厂商"],
-      "refIds": ["7zvbmwfysj"],
+      "aliases": [
+        "自定义档案",
+        "defdoc",
+        "pk_defdoc",
+        "bd_defdoc",
+        "生产厂商"
+      ],
+      "refIds": [
+        "7zvbmwfysj"
+      ],
       "table": "bd_defdoc",
       "pkField": "pk_defdoc",
       "codeField": "code",
       "nameField": "name",
-      "api": { "pk": "0001Z0100000000X8QDD", "name": "查询自定义档案", "path": "uapbd/defdoc/defdocquery", "verified": false },
+      "api": {
+        "pk": "0001Z0100000000X8QDD",
+        "name": "查询自定义档案",
+        "path": "riamm/defdocquery/defdoc/queryDefdoc",
+        "verified": true
+      },
       "note": "需指定档案类别参数（如 pk_defdoclist），参数名以 OPM 接口文档为准。"
     },
     "billtype": {
       "label": "单据类型",
-      "aliases": ["单据类型", "交易类型", "billtype", "pk_billtypeid", "bd_billtype"],
-      "refIds": ["ce7donkwr1"],
+      "aliases": [
+        "单据类型",
+        "交易类型",
+        "billtype",
+        "pk_billtypeid",
+        "bd_billtype"
+      ],
+      "refIds": [
+        "ce7donkwr1"
+      ],
       "table": "bd_billtype",
       "pkField": "pk_billtypeid",
       "codeField": "code",
@@ -142,8 +382,16 @@
     },
     "currtype": {
       "label": "币种",
-      "aliases": ["币种", "币别", "currtype", "pk_currtype", "bd_currtype"],
-      "refIds": ["ebp0wb7y9c"],
+      "aliases": [
+        "币种",
+        "币别",
+        "currtype",
+        "pk_currtype",
+        "bd_currtype"
+      ],
+      "refIds": [
+        "ebp0wb7y9c"
+      ],
       "table": "bd_currtype",
       "pkField": "pk_currtype",
       "codeField": "code",
@@ -153,8 +401,16 @@
     },
     "stordoc": {
       "label": "仓库",
-      "aliases": ["仓库", "库房", "stordoc", "pk_stordoc", "bd_stordoc"],
-      "refIds": ["5qi7yf0q5p"],
+      "aliases": [
+        "仓库",
+        "库房",
+        "stordoc",
+        "pk_stordoc",
+        "bd_stordoc"
+      ],
+      "refIds": [
+        "5qi7yf0q5p"
+      ],
       "table": "bd_stordoc",
       "pkField": "pk_stordoc",
       "codeField": "code",
@@ -164,8 +420,15 @@
     },
     "ratetype": {
       "label": "汇率类型",
-      "aliases": ["汇率类型", "ratetype", "pk_ratetype", "bd_ratetype"],
-      "refIds": ["5heqmccebn"],
+      "aliases": [
+        "汇率类型",
+        "ratetype",
+        "pk_ratetype",
+        "bd_ratetype"
+      ],
+      "refIds": [
+        "5heqmccebn"
+      ],
       "table": "bd_ratetype",
       "pkField": "pk_ratetype",
       "codeField": "code",
@@ -175,8 +438,17 @@
     },
     "taxcode": {
       "label": "增值税税码",
-      "aliases": ["税码", "增值税税码", "税率", "taxcode", "pk_taxcode", "bd_taxcode"],
-      "refIds": ["0p1meclr6j"],
+      "aliases": [
+        "税码",
+        "增值税税码",
+        "税率",
+        "taxcode",
+        "pk_taxcode",
+        "bd_taxcode"
+      ],
+      "refIds": [
+        "0p1meclr6j"
+      ],
       "table": "bd_taxcode",
       "pkField": "pk_taxcode",
       "codeField": "code",
@@ -186,8 +458,16 @@
     },
     "countryzone": {
       "label": "国家地区",
-      "aliases": ["国家", "国家地区", "countryzone", "pk_country", "bd_countryzone"],
-      "refIds": ["h50b0vyepm"],
+      "aliases": [
+        "国家",
+        "国家地区",
+        "countryzone",
+        "pk_country",
+        "bd_countryzone"
+      ],
+      "refIds": [
+        "h50b0vyepm"
+      ],
       "table": "bd_countryzone",
       "pkField": "pk_country",
       "codeField": "code",
@@ -197,8 +477,15 @@
     },
     "busitype": {
       "label": "业务流程",
-      "aliases": ["业务流程", "busitype", "pk_busitype", "bd_busitype"],
-      "refIds": ["pg2770q51y"],
+      "aliases": [
+        "业务流程",
+        "busitype",
+        "pk_busitype",
+        "bd_busitype"
+      ],
+      "refIds": [
+        "pg2770q51y"
+      ],
       "table": "bd_busitype",
       "pkField": "pk_busitype",
       "codeField": "code",
@@ -208,8 +495,15 @@
     },
     "costcenter": {
       "label": "成本中心",
-      "aliases": ["成本中心", "costcenter", "pk_costcenter", "resa_costcenter"],
-      "refIds": ["tkgoirorx2"],
+      "aliases": [
+        "成本中心",
+        "costcenter",
+        "pk_costcenter",
+        "resa_costcenter"
+      ],
+      "refIds": [
+        "tkgoirorx2"
+      ],
       "table": "resa_costcenter",
       "pkField": "pk_costcenter",
       "codeField": "code",
@@ -219,8 +513,15 @@
     },
     "bankaccsub": {
       "label": "银行账户子户",
-      "aliases": ["银行账户", "银行账户子户", "bankaccsub", "bd_bankaccsub"],
-      "refIds": ["ro320uqt14"],
+      "aliases": [
+        "银行账户",
+        "银行账户子户",
+        "bankaccsub",
+        "bd_bankaccsub"
+      ],
+      "refIds": [
+        "ro320uqt14"
+      ],
       "table": "bd_bankaccsub",
       "pkField": "pk_bankaccsub",
       "codeField": "code",
@@ -230,8 +531,16 @@
     },
     "accid": {
       "label": "内部账户",
-      "aliases": ["内部账户", "内部账号", "accid", "pk_accid", "bd_accid"],
-      "refIds": ["um0n49q2kk"],
+      "aliases": [
+        "内部账户",
+        "内部账号",
+        "accid",
+        "pk_accid",
+        "bd_accid"
+      ],
+      "refIds": [
+        "um0n49q2kk"
+      ],
       "table": "bd_accid",
       "pkField": "pk_accid",
       "codeField": "code",
@@ -241,8 +550,15 @@
     },
     "fundplan": {
       "label": "资金计划项目",
-      "aliases": ["资金计划项目", "fundplan", "pk_fundplan", "bd_fundplan"],
-      "refIds": ["x9aq2ydff2"],
+      "aliases": [
+        "资金计划项目",
+        "fundplan",
+        "pk_fundplan",
+        "bd_fundplan"
+      ],
+      "refIds": [
+        "x9aq2ydff2"
+      ],
       "table": "bd_fundplan",
       "pkField": "pk_fundplan",
       "codeField": "code",
