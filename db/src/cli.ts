@@ -2,6 +2,7 @@
 import { configPath, fail, loadConfig, removeProfile, updateProfile } from "./config.ts";
 import { runQuery, type QueryResult } from "./client.ts";
 import { assertReadOnly } from "./guard.ts";
+import { queryTemplates } from "./template.ts";
 
 interface Args {
   cmd?: string;
@@ -49,6 +50,10 @@ const HELP = `yonbip-db — YonBIP 高级版数据库直连 CLI（SQL Server）
                 --timeout <秒>  超时（默认 60）
   tables [过滤] 列出用户表（按名称模糊匹配）
   columns <表>  查看表结构（列名/类型/长度/可空/默认值）
+  template <关键词>  单据模板查询（实时，无缓存）：页面上有哪些字段、
+                哪些是用户自定义项、可编辑/必填/参照关系
+                --limit <n>    最多展开几个模板（默认 3）
+                --json         结构化输出
 
 凭证存储: ${configPath()}（权限 600）
 `;
@@ -158,6 +163,17 @@ async function main(): Promise<void> {
          ORDER BY c.column_id`
       );
       printResult(result, "json" in a.opts);
+      break;
+    }
+    case "template": {
+      const kw = a.sub ?? fail("缺少关键词: yonbip-db template <单据类型/模板名>");
+      await queryTemplates({
+        keyword: kw,
+        node: a.opts.node,
+        meta: a.opts.meta,
+        json: "json" in a.opts,
+        limit: parseInt(a.opts.limit ?? "3", 10) || 3,
+      });
       break;
     }
     default:

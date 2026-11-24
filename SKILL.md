@@ -195,6 +195,7 @@ node <SKILL_DIR>/db/src/cli.ts <命令> [选项]
 | `query "SELECT ..."` | 只读查询，自动拒绝写语句、多语句、SELECT INTO |
 | `exec "UPDATE ..." --confirm` | 写操作；不加 `--confirm` 只打印不执行 |
 | `tables [过滤]` / `columns <表>` | 看有哪些表 / 看表结构 |
+| `template <关键词\|模板pk>` | 单据模板实时查询：页面字段、可编辑/必填/参照、**用户自定义项高亮** |
 
 通用选项：`--json`（结构化输出）、`--timeout <秒>`。
 
@@ -211,6 +212,10 @@ node db/src/cli.ts columns pub_billtemplet_b
 # 3. 查数据（只读随便查）
 node db/src/cli.ts query "SELECT pk_billtemplet, name FROM pub_billtemplet WHERE billtype='263X'" --json
 
+# 4. 看单据页面有哪些字段（含用户自定义项），实时查库、无缓存，模板随账套配置变动后立即生效
+node db/src/cli.ts template 报销单
+node db/src/cli.ts template <模板pk> --json   # 给 agent 精确解析
+
 # 4. 写操作必须先给用户看 SQL，确认后加 --confirm
 node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemplet='...'" --confirm
 ```
@@ -220,6 +225,9 @@ node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemple
 - 账号建议**只读**；exec 的护栏是 CLI 层的最后防线，不能替代账号权限控制。
 - 模板类数据（pub_billtemplet / pub_billtemplet_b）随账套配置频繁变动，**只实时查、
   不做离线缓存**。
+- `template` 字段中文名解析顺序：模板显示名（defaultshowname）→ 数据字典（fields.jsonl，
+  按源文件 mtime 缓存索引到 ~/.cache/yonbip-db/）→ 留空；`[自定义]` = 用户自定义项/
+  自由项（def*/defitem*/zyx*/userdef*）。
 - 连接配置支持多套 profile（`--profile <名>`），多环境切换。
 
 ---
