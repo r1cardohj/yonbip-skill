@@ -116,7 +116,23 @@ export async function queryUserDef(opts: UserDefOptions): Promise<void> {
     throw new Error("缺少参数: userdef <关键词> 或 userdef --table <物理表名>");
   }
 
-  const rules = await fetchRules(families);
+  let rules = await fetchRules(families);
+  // 关键词模式再直接按规则编码/名称匹配一轮（覆盖自定义档案规则 Defdoc-xxx 等单据类型关联不到的情形）
+  if (opts.keyword) {
+    const kw = esc(opts.keyword);
+    const direct = rowsOf(
+      await runQuery(
+        `SELECT r.pk_userdefrule, r.code, r.name FROM bd_userdefrule r
+         WHERE (r.dr = 0 OR r.dr IS NULL) AND (r.code LIKE '%${kw}%' OR r.name LIKE '%${kw}%')`,
+        30000
+      )
+    );
+    const known = new Set(rules.map((r) => r.pk));
+    for (const r of direct) {
+      if (known.has(String(r.pk_userdefrule))) continue;
+      rules.push({ pk: String(r.pk_userdefrule), code: String(r.code), name: String(r.name ?? ""), isBody: /_(B|C|BODY\d*)$/i.test(String(r.code)) });
+    }
+  }
   if (!rules.length) {
     throw new Error(`单据类型族 [${[...families].join(", ")}] 没有自定义项规则（bd_userdefrule）`);
   }

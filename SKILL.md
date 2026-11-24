@@ -237,6 +237,37 @@ node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemple
 - 页面没注册模板（pub_billtemplet 查不到）时，`userdef --table <表名>` 走另一条链路：物理表
   → bd_billtype.component → 单据类型族 → bd_userdefrule（_H 表头 vdefN / _B、_C 表体 vbdefN）
   → 用户命名，并校验物理列是否真实存在。
+
+## 字段定位流程（按序排查，别跳步）
+
+用户问"XX 是哪个字段"时，按这个顺序收敛，每一步都有对应命令：
+
+1. **标准字段先查字典**：`yonbip-dict fields <表名>`（有中文名/类型/引用）。数量金额注意
+   双单位口径：`nqtunitnum`/`nqt*` 前缀 = 计价单位，`nnum`/无前缀 = 主单位。
+2. **名字对不上 → 用户自定义项**：`yonbip-db userdef --table <表名>`。NC 自定义项是固定槽位，
+   出厂字典只显示"自定义项N"，用户起的名字在自定义项设置里：
+   - 单据**表头**槽位 `vdef1~30`，**表体**槽位 `vbdef1~50`（注意是 vbdef，带 b）
+   - **自定义档案**的自定义项是 `bd_defdoc.defN`（如"委外工序加工费匹配规则"的对应加工费
+     代码 = `bd_defdoc.def6`）
+   - 规则编码 `[模块_]单据类型族[_H/_B/_C]`：`_H`=表头、`_B`/`_C`=表体；propindex N ↔ 槽位尾号 N
+3. **自定义档案命名用关键词全局搜**：`userdef <关键词>` 会直接匹配规则编码/名称
+   （覆盖 Defdoc-xxx 这类与单据类型无关联的规则）。
+4. **都不像 → 二开物理列**：对比物理列与字典差异
+   `query "SELECT name FROM sys.columns WHERE object_id=OBJECT_ID('<表>')"` vs 字典字段清单，
+   物理有而字典无的列即二开新增（字典是出厂 schema）。
+5. **参照字段存的是 pk 不是编码**：页面显示 code/name，库里存主键，取编码要 JOIN 主数据
+   （物料 → bd_material，组织 → org_orgs 等）。
+
+## 查库避坑
+
+- **dr 过滤写 `(dr = 0 OR dr IS NULL)`**：NC 不少表有效行 dr 是 NULL，只写 `dr=0` 会漏数据
+  （bd_userdefrule/item 就是）。
+- **自定义项槽位全是字符串**：vbdef/vdef 是 nvarchar，连"计价数量"这种也存文本，参与计算先
+  `CAST(... AS decimal(28,8))`。
+- **单据类型族以 X 结尾**：交易类型 2640/2643 属于族 264X（bd_billtype.parentbilltype），
+  自定义项规则按族命名（erm_264X_B），反查时别忘了 X 尾码变体。
+- **模板可能根本没注册**：轻量表单/二开页面的模板不在 pub_billtemplet，template 命令查不到
+  是正常的，直接走 userdef --table 或字典。
 - 连接配置支持多套 profile（`--profile <名>`），多环境切换。
 
 ---
