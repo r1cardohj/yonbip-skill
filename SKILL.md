@@ -225,9 +225,10 @@ node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemple
 - 账号建议**只读**；exec 的护栏是 CLI 层的最后防线，不能替代账号权限控制。
 - 模板类数据（pub_billtemplet / pub_billtemplet_b）随账套配置频繁变动，**只实时查、
   不做离线缓存**。
-- `template` 字段中文名解析顺序：模板显示名（defaultshowname）→ 数据字典（fields.jsonl，
-  按源文件 mtime 缓存索引到 ~/.cache/yonbip-db/）→ 留空；`[自定义]` = 用户自定义项/
-  自由项（def*/defitem*/zyx*/userdef*）。
+- `template` 字段中文名解析顺序：模板改名（defaultshowname，与字段名不同才算）→ **用户自定义项名称**
+  （bd_userdefrule/bd_userdefitem：单据类型族如 264X → 规则 erm_264X_H/B/C → propindex→showname，
+  表头/表体不同会同时标注）→ 数据字典（fields.jsonl，按源文件 mtime 缓存索引到 ~/.cache/yonbip-db/）；
+  `[自定义]` = 用户自定义项/自由项（def*/defitem*/zyx*/userdef*）。
 - 连接配置支持多套 profile（`--profile <名>`），多环境切换。
 
 ---

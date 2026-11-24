@@ -70,6 +70,71 @@ function loadNameIndex(): Map<string, string> | null {
 // NC 体系里的用户自定义/扩展字段：自定义项 def1-30、defitemN、自由项 zyx1-30、userdef*
 const CUSTOM_FIELD = /^(v?def\d+|defitem\d+|zyx\d+|userdef\w*)$/i;
 
+interface UserDefNames {
+  head: Map<number, string[]>;
+  body: Map<number, string[]>;
+}
+
+async function loadCustomNames(heads: Record<string, unknown>[]): Promise<(itemkey: string) => string> {
+  const billCodes = [...new Set(heads.map((h) => String(h.pk_billtypecode).replace(/'/g, "''")))].filter(Boolean);
+  if (!billCodes.length) return () => "";
+  const billRows = rowsOf(
+    await runQuery(
+      `SELECT pk_billtypecode, parentbilltype FROM bd_billtype WHERE (dr = 0 OR dr IS NULL) AND pk_billtypecode IN ('${billCodes.join("','")}')`,
+      30000
+    )
+  );
+  const families = new Set<string>();
+  for (const c of billCodes) {
+    families.add(c);
+    // NC 约定：单据类型族以 X 结尾（264X），交易类型是族内编码（2640）；模板可能直接绑交易类型
+    families.add(c.replace(/.$/, "X"));
+  }
+  for (const b of billRows) {
+    if (b.parentbilltype) families.add(String(b.parentbilltype).trim());
+  }
+  const likeConds = [...families].map((f) => `code LIKE '%${f.replace(/'/g, "''")}%'`).join(" OR ");
+  const rules = rowsOf(
+    await runQuery(`SELECT pk_userdefrule, code FROM bd_userdefrule WHERE (dr = 0 OR dr IS NULL) AND (${likeConds})`, 30000)
+  );
+  if (!rules.length) return () => "";
+  const rulePks = rules.map((r) => String(r.pk_userdefrule).replace(/'/g, "''"));
+  // 规则编码后缀：_H/无后缀=表头，_B/_C=表体（如 erm_264X_H / erm_264X_B / erm_264X_C 分摊）
+  const isBody = (code: string) => /_(B|C|BODY\d*)$/i.test(code);
+  const items = rowsOf(
+    await runQuery(
+      `SELECT pk_userdefrule, propindex, showname FROM bd_userdefitem
+       WHERE (dr = 0 OR dr IS NULL) AND pk_userdefrule IN ('${rulePks.join("','")}')
+         AND showname IS NOT NULL AND showname <> '~' AND showname <> ''`,
+      30000
+    )
+  );
+  const head: UserDefNames["head"] = new Map();
+  const body: UserDefNames["body"] = new Map();
+  const push = (m: Map<number, string[]>, idx: number, name: string) => {
+    const list = m.get(idx) ?? [];
+    if (!list.includes(name)) list.push(name);
+    m.set(idx, list);
+  };
+  for (const it of items) {
+    const rule = rules.find((r) => String(r.pk_userdefrule) === String(it.pk_userdefrule));
+    if (!rule) continue;
+    const idx = Number(it.propindex);
+    if (!Number.isInteger(idx)) continue;
+    const target = isBody(String(rule.code)) ? body : head;
+    push(target, idx, String(it.showname).trim());
+  }
+  return (itemkey: string): string => {
+    const m = /defitem(\d+)|^v?def(\d+)$/i.exec(itemkey);
+    if (!m) return "";
+    const idx = Number(m[1] ?? m[2]);
+    const h = (head.get(idx) ?? []).join("/");
+    const b = (body.get(idx) ?? []).join("/");
+    if (h && b && h !== b) return `表头:${h}/表体:${b}`;
+    return h || b;
+  };
+}
+
 function rowsOf(result: QueryResult): Record<string, unknown>[] {
   return result.rows.map((r) => Object.fromEntries(result.columns.map((c, i) => [c, r[i]])));
 }
@@ -117,16 +182,25 @@ export async function queryTemplates(opts: TemplateOptions): Promise<void> {
   }
 
   const names = loadNameIndex();
+
+  // 用户自定义项名称链：模板单据类型 → bd_billtype.parentbilltype 族（如 264X）
+  // → bd_userdefrule（erm_264X=表头 / erm_264X_B=表体）→ bd_userdefitem(propindex→showname)
+  const customNames = await loadCustomNames(heads);
+
   const resolveName = (f: Record<string, unknown>): string => {
+    const key = String(f.itemkey);
     const showname = f.defaultshowname ? String(f.defaultshowname).trim() : "";
-    if (showname) return showname;
+    // 模板里没改过名时 defaultshowname 就是字段名本身（占位），继续往下解析
+    if (showname && showname !== key) return showname;
+    const custom = customNames(key);
+    if (custom) return custom;
     const mp = String(f.metadataproperty ?? "");
     const parts = mp.split(".");
     if (parts.length >= 2 && names) {
       const dn = names.get(`${parts[parts.length - 2]}.${parts[parts.length - 1]}`);
       if (dn) return dn;
     }
-    return "";
+    return showname;
   };
 
   const shown = heads.slice(0, opts.limit);
