@@ -1,20 +1,22 @@
 ---
 name: yonbip-skill
-description: 用友 YonBIP 高级版（NC Cloud）开发助手：数据字典查询（表/字段/引用/枚举，13 万表离线查）+ OpenAPI 调用（OPM 认证、业务接口取数、接口目录搜索）+ 数据库直连（SQL Server 通用表查询，模板/单据数据实时查）。做二开、联调、查数时先用字典确认结构，再用 OpenAPI 或 DB 拉真实数据。
+description: 用友 YonBIP 高级版（NC Cloud）开发助手：数据字典查询（表/字段/引用/枚举，13 万表离线查）+ OpenAPI 调用（OPM 认证、业务接口取数、接口目录搜索）+ 数据库直连（SQL Server 通用表查询，模板/单据数据实时查）+ 开发环境配置（NCHOME、前后端工程位置）。做二开、联调、查数时先用字典确认结构，再用 OpenAPI 或 DB 拉真实数据。
 ---
 
 # YonBIP 开发助手
 
-一个 skill，三个 CLI：
+一个 skill，四个 CLI：
 
 | CLI | 路径 | 用途 |
 |---|---|---|
 | yonbip-dict | `src/cli.ts` | 数据字典离线查询（数据已打包在 `data/`） |
 | yonbip-api | `openapi/src/cli.ts` | OpenAPI 认证 + 业务接口调用 |
 | yonbip-db | `db/src/cli.ts` | 数据库直连（SQL Server；SELECT 放行，写操作需 --confirm） |
+| yonbip-dev | `dev/src/cli.ts` | 开发环境配置（NCHOME + 前后端工程位置，agent 定位代码） |
 
 配合使用：先用字典搞清楚表结构/字段含义，再按场景取数——OpenAPI 覆盖对外
-接口，db 覆盖所有表（模板、参数、单据数据）。
+接口，db 覆盖所有表（模板、参数、单据数据）；做二开代码改动前先用 yonbip-dev
+确认工程位置。
 
 **安装**：`pi install git:github.com/r1cardohj/yonbip-skill`（零构建，Node >= 22.18）。
 **数据初始化（自动）**：表/模块索引随包可用；字段数据走 Git LFS，
@@ -272,7 +274,47 @@ node db/src/cli.ts exec "UPDATE pub_billtemplet SET name='x' WHERE pk_billtemple
 
 ---
 
-# 四、通用注意事项
+# 四、yonbip-dev — 开发环境配置
+
+记录 NCHOME 与前后端工程位置，做二开代码改动前先跑 `info` 定位代码。
+支持多 profile 切换多套环境（开发/测试）。
+
+## 运行
+
+```bash
+node <SKILL_DIR>/dev/src/cli.ts <命令> [选项]
+```
+
+## 命令速查
+
+| 命令 | 用途 |
+|---|---|
+| `set --nc-home <dir> --front <dir> --back <dir>` | 配置环境路径（front/back 可多次传入配多个工程） |
+| `info [--json]` | 输出当前环境路径（agent 定位代码的入口） |
+| `auth status` / `auth logout` | 查看 / 删除 profile |
+
+## 典型工作流
+
+```bash
+# 1. 配置（一次性；相对路径自动转绝对路径，目录不存在会拒绝保存）
+node dev/src/cli.ts set --nc-home /opt/nc_home \
+  --front /work/nccloud-front/myapp --back /work/modules/myapp
+
+# 2. 开发前定位代码
+node dev/src/cli.ts info --json
+# → {"profile":"default","ncHome":"...","front":[...],"back":[...]}
+```
+
+要点：
+
+- `--nc-home` 指向 NCHOME 运行时目录（含 `modules`/`hotwebs` 等），保存时会提示
+  典型结构校验；前后端工程目录可配多个（`--front`/`--back` 重复传）。
+- 配置文件 `~/.config/yonbip-dev/config.json`（600 权限），`YONBIP_DEV_HOME`
+  可覆盖存储位置。
+
+---
+
+# 五、通用注意事项
 
 - 上下文纪律：字典有 13 万张表、接口目录 2000+，绝对不要把清单全量读进上下文，
   一律 CLI 按需查询（默认 30 条以内），`--json` 供脚本精确解析。
